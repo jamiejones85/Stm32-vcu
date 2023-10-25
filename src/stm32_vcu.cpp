@@ -596,6 +596,7 @@ static void SetCanFilters()
    CanHardware* charger_can = canInterface[Param::GetInt(Param::ChargerCan)];
    CanHardware* bms_can = canInterface[Param::GetInt(Param::BMSCan)];
    CanHardware* obd2_can = canInterface[Param::GetInt(Param::OBD2Can)];
+   CanHardware* heater_can = canInterface[Param::GetInt(Param::HeaterCan)];
 
    selectedInverter->SetCanInterface(inverter_can);
    selectedVehicle->SetCanInterface(vehicle_can);
@@ -603,6 +604,7 @@ static void SetCanFilters()
    selectedChargeInt->SetCanInterface(lim_can);
    selectedBMS->SetCanInterface(bms_can);
    canOBD2.SetCanInterface(obd2_can);
+   selectedHeater->SetCanInterface(heater_can);
 
    if (Param::GetInt(Param::Type) == 0)  ISA::RegisterCanMessages(shunt_can);//select isa shunt
    if (Param::GetInt(Param::Type) == 1)  SBOX::RegisterCanMessages(shunt_can);//select bmw sbox
