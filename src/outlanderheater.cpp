@@ -71,19 +71,21 @@ void OutlanderHeater::SetCanInterface(CanHardware* c)
 
 void OutlanderHeater::DecodeCAN(int id, uint32_t data[2]) {
    if (0x398 == id) {
-      int8_t temp1 = data[3] - 40;
-      int8_t temp2 = data[4] - 40;
+      uint8_t* bytes = (uint8_t*)data;
+
+      int8_t temp1 = bytes[3] - 40;
+      int8_t temp2 = bytes[4] - 40;
       if (temp2 > temp1) {
          currentTemperature = temp2;
       } else {
          currentTemperature = temp1;
       }
       Param::SetInt(Param::HeatActual, currentTemperature);
-      active = data[5] > 0;
+      active = bytes[5] > 0;
       
-      if (data[6] == 0x09) {
+      if (bytes[6] == 0x09) {
          hvPresent = false;
-      } else if (data[6] == 0x00) {
+      } else if (bytes[6] == 0x00) {
          hvPresent = true;
       }
    }
