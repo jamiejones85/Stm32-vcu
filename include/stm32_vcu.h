@@ -54,6 +54,7 @@
 #include "chademo.h"
 #include "heater.h"
 #include "amperaheater.h"
+#include "outlanderheater.h"
 #include "inverter.h"
 #include "vehicle.h"
 #include "chargerhw.h"
@@ -74,6 +75,7 @@
 #include "daisychainbms.h"
 #include "outlanderCharger.h"
 #include "Can_OBD2.h"
+
 
 #define PRECHARGE_TIMEOUT 5  //5s
 

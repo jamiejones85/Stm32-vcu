@@ -68,6 +68,7 @@ static Can_OI openInv;
 static OutlanderInverter outlanderInv;
 static noHeater Heaternone;
 static AmperaHeater amperaHeater;
+static OutlanderHeater outlanderHeater;
 static Inverter* selectedInverter = &openInv;
 static Vehicle* selectedVehicle = &vagVehicle;
 static Heater* selectedHeater = &Heaternone;
@@ -256,7 +257,7 @@ static void ControlCabHeater(int opmode)
    if (opmode == MOD_RUN && Param::GetInt(Param::Control) == 1)
    {
       IOMatrix::GetPin(IOMatrix::HEATERENABLE)->Set();//Heater enable and coolant pump on
-      selectedHeater->SetTargetTemperature(50); //TODO: Currently does nothing
+      selectedHeater->SetTargetTemperature(Param::GetInt(Param::HeatTarget));
       selectedHeater->SetPower(Param::GetInt(Param::HeatPwr),Param::GetBool(Param::HeatReq));
    }
    else
@@ -556,6 +557,10 @@ static void UpdateHeater()
       selectedHeater = &amperaHeater;
          break;
       case HeatType::VW:
+         break;
+      case HeatType::OutlandHeater:
+         selectedHeater = &outlanderHeater;
+
          break;
    }
    //This will call SetCanFilters() via the Clear Callback
