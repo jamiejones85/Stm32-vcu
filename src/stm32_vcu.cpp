@@ -705,6 +705,8 @@ static bool CanCallback(uint32_t id, uint32_t data[2]) //This is where we go whe
       selectedCharger->DecodeCAN(id, data);
       selectedChargeInt->DecodeCAN(id, data);
       selectedBMS->DecodeCAN(id, (uint8_t*)data);
+      selectedHeater->DecodeCAN(id, data);
+
       break;
    }
    return false;

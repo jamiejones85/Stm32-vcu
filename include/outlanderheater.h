@@ -25,11 +25,17 @@ class OutlanderHeater: public Heater
 {
 public:
    OutlanderHeater();
-   void SetTargetTemperature(float temp) { (void)temp; }
    void SetPower(uint16_t power, bool HeatReq);
-   void DecodeCAN(int, uint32_t*) {};
+   void SetTargetTemperature(float temp);
+   void DecodeCAN(int, uint32_t*);
+   void SetCanInterface(CanHardware* c);
+
 
 private:
+   int8_t currentTemperature;
+   bool hvPresent;
+   bool active;
+   float targetTemperature;
 };
 
 #endif
