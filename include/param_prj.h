@@ -111,6 +111,10 @@
     PARAM_ENTRY(CAT_IOPINS,    PWM1Func,    PINFUNCS,  0,      9,      0,      85 ) \
     PARAM_ENTRY(CAT_IOPINS,    PWM2Func,    PINFUNCS,  0,      9,      4,      86 ) \
     PARAM_ENTRY(CAT_IOPINS,    PWM3Func,    PINFUNCS,  0,      9,      2,      87 ) \
+    PARAM_ENTRY(CAT_IOPINS,    GPA1Func,    APINFUNCS, 0,      1,      0,      99 ) \
+    PARAM_ENTRY(CAT_IOPINS,    GPA2Func,    APINFUNCS, 0,      1,      0,      100 ) \
+    PARAM_ENTRY(CAT_IOPINS,    vacuumthresh,"dig",     0,      4095,   2700,   101 ) \
+    PARAM_ENTRY(CAT_IOPINS,    vacuumhyst,  "dig",     0,      4095,   2500,   102 ) \
     PARAM_ENTRY(CAT_SHUNT,     IsaInit,     ONOFF,     0,      1,      0,      75 ) \
     PARAM_ENTRY(CAT_SHUNT,     Type,        SHNTYPE,   0,      2,      0,      88 ) \
     VALUE_ENTRY(version,       VERSTR,              2000 ) \
@@ -202,6 +206,7 @@
 #define PINFUNCS     "0=None, 1=ChaDeMoAlw, 2=OBCEnable, 3=HeaterEnable, 4=RunIndication, 5=WarnIndication," \
                      "6=CoolantPump, 7=NegContactor, 8=BrakeLight, 9=ReverseLight, 10=HeatReq, 11=HVRequest," \
                      "12=DCFCRequest"
+#define APINFUNCS    "0=None, 1=BrakeVacuum"
 #define SHNTYPE      "0=ISA, 1=SBOX, 2=VAG"
 #define DMODES       "0=CLOSED, 1=OPEN, 2=ERROR, 3=INVALID"
 #define POTMODES     "0=SingleChannel, 1=DualChannel"
@@ -405,7 +410,11 @@ enum can_devices
     CAN_DEV2 = 1
 };
 
-
+enum gp_anal_fucntion
+{
+    GPA_NONE = 0,
+    GPA_BRKVAC
+};
 
 
 
