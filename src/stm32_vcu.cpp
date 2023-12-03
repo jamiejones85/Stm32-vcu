@@ -173,17 +173,11 @@ static void Ms200Task(void)
    if(opmode==MOD_RUN) {
       ChgLck=false;//reset charge lockout flag when we drive off
 
-      if(Param::GetInt(Param::GPA1Func) == GPA_BRKVAC || Param::GetInt(Param::GPA2Func) == GPA_BRKVAC) {
+      if(IOMatrix::GetAnaloguePin(IOMatrix::VACSENSOR) != &AnaIn::dummyAnal) {
          int vacuumthresh = Param::GetInt(Param::vacuumthresh);
          int vacuumhyst = Param::GetInt(Param::vacuumhyst);
 
-         int vacuum = 0;
-         if (Param::GetInt(Param::GPA1Func) == GPA_BRKVAC) {
-            vacuum = AnaIn::GP_analog1.Get();
-         } else if (Param::GetInt(Param::GPA2Func) == GPA_BRKVAC) {
-            vacuum = AnaIn::GP_analog2.Get();
-         }
-
+         int vacuum = IOMatrix::GetAnaloguePin(IOMatrix::VACSENSOR)->Get();
          if (vacuum > vacuumthresh)
          {
             IOMatrix::GetPin(IOMatrix::VACPUMP)->Clear();         

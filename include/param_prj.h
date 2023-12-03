@@ -258,6 +258,7 @@
 #define CAN_PERIOD_10MS     1
 
 #define FIRST_IO_PARAM Param::Out1Func
+#define FIRST_AI_PARAM Param::GPA1Func
 
 enum modes
 {
