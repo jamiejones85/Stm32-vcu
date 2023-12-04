@@ -40,6 +40,7 @@
     PARAM_ENTRY(CAT_SETUP,     OBD2Can,      CAN_DEV,  0,      1,      0,      96 ) \
     PARAM_ENTRY(CAT_SETUP,     CanMapCan,    CAN_DEV,  0,      1,      0,      97 ) \
     PARAM_ENTRY(CAT_SETUP,     DCDCCan,      CAN_DEV,  0,      1,      1,      107 ) \
+    PARAM_ENTRY(CAT_SETUP,     HeaterCan,    CAN_DEV,  0,      1,      0,      108 ) \
     PARAM_ENTRY(CAT_THROTTLE,  potmin,      "dig",     0,      4095,   0,      7  ) \
     PARAM_ENTRY(CAT_THROTTLE,  potmax,      "dig",     0,      4095,   4095,   8  ) \
     PARAM_ENTRY(CAT_THROTTLE,  pot2min,     "dig",     0,      4095,   4095,   9  ) \
@@ -91,9 +92,10 @@
     PARAM_ENTRY(CAT_BMS,       BMS_VmaxLimit, "V",     0,      10,     4.2,    93 ) \
     PARAM_ENTRY(CAT_BMS,       BMS_TminLimit, "°C",    -100,   100,    5,      94 ) \
     PARAM_ENTRY(CAT_BMS,       BMS_TmaxLimit, "°C",    -100,   100,    50,     95 ) \
-    PARAM_ENTRY(CAT_HEATER,    Heater,      HTTYPE,    0,      2,      0,      57 ) \
+    PARAM_ENTRY(CAT_HEATER,    Heater,      HTTYPE,    0,      3,      0,      57 ) \
     PARAM_ENTRY(CAT_HEATER,    Control,     HTCTRL,    0,      2,      0,      58 ) \
     PARAM_ENTRY(CAT_HEATER,    HeatPwr,     "W",       0,      6500,   0,      59 ) \
+    PARAM_ENTRY(CAT_HEATER,    HeatTarget,  "°C",      40,     90,     70,     109 ) \
     PARAM_ENTRY(CAT_CLOCK,     Set_Day,     DOW,       0,      6,      0,      46 ) \
     PARAM_ENTRY(CAT_CLOCK,     Set_Hour,    "Hours",   0,      23,     0,      47 ) \
     PARAM_ENTRY(CAT_CLOCK,     Set_Min,     "Mins",    0,      59,     0,      48 ) \
@@ -201,7 +203,7 @@
     VALUE_ENTRY(AC_Amps,       "A",                 2089 ) \
     VALUE_ENTRY(canctr,        "dig",               2091 ) \
     VALUE_ENTRY(cpuload,       "%",                 2063 ) \
-
+    VALUE_ENTRY(HeatActual,   "°C",                 2092 ) \
 
 //Next value Id: 2092
 
@@ -236,7 +238,7 @@
 #define ERRLIGHTS    "0=Off, 4=EPC, 8=engine"
 #define CRUISESTATES "0=None, 1=On, 2=Disable, 4=Set, 8=Resume"
 #define CDMSTAT      "1=Charging, 2=Malfunction, 4=ConnLock, 8=BatIncomp, 16=SystemMalfunction, 32=Stop"
-#define HTTYPE       "0=None, 1=Ampera, 2=VW"
+#define HTTYPE       "0=None, 1=Ampera, 2=VW, 3=Outlander"
 #define HTCTRL       "0=Disable, 1=Enable, 2=Timer"
 #define CHGMODS      "0=Off, 1=EXT_DIGI, 2=Volt_Ampera, 3=Leaf_PDM, 4=TeslaOI, 5=Out_lander"
 #define CHGCTRL      "0=Enable, 1=Disable, 2=Timer"
@@ -331,7 +333,8 @@ enum HeatType
 {
     Noheater = 0,
     AmpHeater = 1,
-    VW = 2
+    VW = 2,
+    OutlandHeater = 3
 };
 
 enum BMSModes

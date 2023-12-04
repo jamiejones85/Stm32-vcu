@@ -55,6 +55,7 @@
 #include "chademo.h"
 #include "heater.h"
 #include "amperaheater.h"
+#include "outlanderheater.h"
 #include "inverter.h"
 #include "vehicle.h"
 #include "chargerhw.h"
@@ -78,6 +79,7 @@
 #include "dcdc.h"
 #include "TeslaDCDC.h"
 #include "BMW_E31.h"
+
 
 #define PRECHARGE_TIMEOUT 5  //5s
 

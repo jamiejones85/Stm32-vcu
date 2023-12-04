@@ -68,6 +68,7 @@ static Can_OI openInv;
 static OutlanderInverter outlanderInv;
 static noHeater Heaternone;
 static AmperaHeater amperaHeater;
+static OutlanderHeater outlanderHeater;
 static Inverter* selectedInverter = &openInv;
 static Vehicle* selectedVehicle = &vagVehicle;
 static Heater* selectedHeater = &Heaternone;
@@ -261,7 +262,7 @@ static void ControlCabHeater(int opmode)
    if (opmode == MOD_RUN && Param::GetInt(Param::Control) == 1)
    {
       IOMatrix::GetPin(IOMatrix::HEATERENABLE)->Set();//Heater enable and coolant pump on
-      selectedHeater->SetTargetTemperature(50); //TODO: Currently does nothing
+      selectedHeater->SetTargetTemperature(Param::GetInt(Param::HeatTarget));
       selectedHeater->SetPower(Param::GetInt(Param::HeatPwr),Param::GetBool(Param::HeatReq));
    }
    else
@@ -563,6 +564,10 @@ static void UpdateHeater()
          break;
       case HeatType::VW:
          break;
+      case HeatType::OutlandHeater:
+         selectedHeater = &outlanderHeater;
+
+         break;
    }
    //This will call SetCanFilters() via the Clear Callback
    canInterface[0]->ClearUserMessages();
@@ -628,6 +633,7 @@ static void SetCanFilters()
    CanHardware* bms_can = canInterface[Param::GetInt(Param::BMSCan)];
    CanHardware* obd2_can = canInterface[Param::GetInt(Param::OBD2Can)];
    CanHardware* dcdc_can = canInterface[Param::GetInt(Param::DCDCCan)];
+   CanHardware* heater_can = canInterface[Param::GetInt(Param::HeaterCan)];
 
    selectedInverter->SetCanInterface(inverter_can);
    selectedVehicle->SetCanInterface(vehicle_can);
@@ -636,6 +642,7 @@ static void SetCanFilters()
    selectedBMS->SetCanInterface(bms_can);
    selectedDCDC->SetCanInterface(dcdc_can);
    canOBD2.SetCanInterface(obd2_can);
+   selectedHeater->SetCanInterface(heater_can);
 
    if (Param::GetInt(Param::Type) == 0)  ISA::RegisterCanMessages(shunt_can);//select isa shunt
    if (Param::GetInt(Param::Type) == 1)  SBOX::RegisterCanMessages(shunt_can);//select bmw sbox
@@ -745,6 +752,7 @@ static bool CanCallback(uint32_t id, uint32_t data[2], uint8_t dlc) //This is wh
       selectedChargeInt->DecodeCAN(id, data);
       selectedBMS->DecodeCAN(id, (uint8_t*)data);
       selectedDCDC->DecodeCAN(id, (uint8_t*)data);
+      selectedHeater->DecodeCAN(id, data);
       break;
    }
    return false;
