@@ -207,7 +207,8 @@
     VALUE_ENTRY(AC_Amps,       "A",                 2089 ) \
     VALUE_ENTRY(canctr,        "dig",               2091 ) \
     VALUE_ENTRY(cpuload,       "%",                 2063 ) \
-    VALUE_ENTRY(HeatActual,   "°C",                 2092 ) \
+    VALUE_ENTRY(HeatActual,    "°C",                2092 ) \
+    VALUE_ENTRY(Vacuum,        "dig",               2093 ) \
 
 //Next value Id: 2092
 

@@ -182,6 +182,7 @@ static void Ms200Task(void)
          int vacuumhyst = Param::GetInt(Param::vacuumhyst);
 
          int vacuum = IOMatrix::GetAnaloguePin(IOMatrix::VACSENSOR)->Get();
+         Param::SetInt(Param::Vacuum, vacuum);
          if (vacuum > vacuumthresh)
          {
             IOMatrix::GetPin(IOMatrix::VACPUMP)->Clear();         
