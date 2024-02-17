@@ -110,6 +110,30 @@ void BMWE65::Task100Ms()
 
 void BMWE65::Task200Ms()
 {
+
+   if (isE90) {
+      //update shitPos
+      int selectedDir = Param::GetInt(Param::dir);
+
+      if (selectedDir == 0) {
+         //neutral/park
+         this->gear = PARK;
+         gear_BA = 0x03;
+         shiftPos = 0xe1;
+      } else if (selectedDir == -1) {
+         //reverse
+         this->gear = REVERSE;
+         gear_BA = 0x02;
+         shiftPos = 0xd2;
+      } else if (selectedDir == 1) {
+         //forward
+         this->gear = DRIVE;
+         gear_BA = 0x08;
+         shiftPos = 0x78;
+      }
+
+   }
+
    uint8_t bytes[8];
 ///////////////////////////////////////////////////////////////////////////////////////////////////
    bytes[0]=shiftPos;  //e1=P  78=D  d2=R  b4=N
@@ -217,6 +241,9 @@ void BMWE65::SendAbsDscMessages(bool Brake_In)
 
 bool BMWE65::GetGear(Vehicle::gear& outGear)
 {
+   if (isE90) {
+      return false;
+   }
    outGear = gear;    //send the shifter pos
    return true; //Let caller know we set a valid gear
 }

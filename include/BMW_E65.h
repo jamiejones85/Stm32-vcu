@@ -25,6 +25,7 @@ public:
    bool Start() { return terminal15On; }
    bool GetGear(Vehicle::gear& outGear);
    void DashOff();
+   void SetE90(bool e90) { isE90 = e90; }
 
 private:
    void SendAbsDscMessages(bool Brake_In);
@@ -34,6 +35,7 @@ private:
    Vehicle::gear gear;
    int revCounter;
    float temperature;
+   bool isE90;
 };
 
 #endif /* BMW_E65_h */
