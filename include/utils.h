@@ -11,6 +11,7 @@
 #include "canhardware.h"
 #include "anain.h"
 #include "throttle.h"
+#include "outlanderCharger.h"
 #include "isa_shunt.h"
 #include "bmw_sbox.h"
 #include "vag_sbox.h"

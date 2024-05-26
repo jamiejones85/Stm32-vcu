@@ -131,7 +131,7 @@
     PARAM_ENTRY(CAT_IOPINS,    BrkVacThresh,"dig",     0,      4095,   2500,   115 ) \
     PARAM_ENTRY(CAT_IOPINS,    BrkVacHyst,  "dig",     0,      4095,   2500,   116 ) \
     PARAM_ENTRY(CAT_SHUNT,     IsaInit,     ONOFF,     0,      1,      0,      75 ) \
-    PARAM_ENTRY(CAT_SHUNT,     Type,        SHNTYPE,   0,      2,      0,      88 ) \
+    PARAM_ENTRY(CAT_SHUNT,     Type,        SHNTYPE,   0,      3,      0,      88 ) \
     PARAM_ENTRY(CAT_PWM,       Tim3_Presc,  "",        1,      72000,  719,    100 ) \
     PARAM_ENTRY(CAT_PWM,       Tim3_Period, "",        1,      100000, 7200,   101 ) \
     PARAM_ENTRY(CAT_PWM,       Tim3_1_OC,   "",        1,      100000, 3600,   102 ) \
@@ -233,7 +233,7 @@
                      "12=DCFCRequest, 13=BrakeVacPump, 14=PwmTim3"
 #define APINFUNCS    "0=None, 1=ProxPilot, 2=BrakeVacSensor"
 #define SHIFTERS     "0=None, 1=BMW_F30, 2=JLR_G1, 3=JLR_G2"
-#define SHNTYPE      "0=ISA, 1=SBOX, 2=VAG"
+#define SHNTYPE      "0=ISA, 1=SBOX, 2=VAG, 3=OutlanderCharger"
 #define DMODES       "0=CLOSED, 1=OPEN, 2=ERROR, 3=INVALID"
 #define POTMODES     "0=SingleChannel, 1=DualChannel"
 #define BTNSWITCH    "0=Button, 1=Switch, 2=CAN"
