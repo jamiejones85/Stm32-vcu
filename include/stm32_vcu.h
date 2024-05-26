@@ -87,6 +87,7 @@
 #include "VWheater.h"
 #include "ElconCharger.h"
 #include "rearoutlanderinverter.h"
+#include "kangoobms.h"
 
 #define PRECHARGE_TIMEOUT 5  //5s
 
