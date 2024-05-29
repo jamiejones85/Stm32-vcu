@@ -96,8 +96,8 @@
     PARAM_ENTRY(CAT_DCDC,      DCSetPnt,    "V",       9,      15,     14,     106 ) \
     PARAM_ENTRY(CAT_BMS,       BMS_Mode,    BMSMODES,  0,      4,      0,      90 ) \
     PARAM_ENTRY(CAT_BMS,       BMS_Timeout,  "sec",    1,      120,    10,     91 ) \
-    PARAM_ENTRY(CAT_BMS,       BMS_VminLimit, "V",     0,      10,     3.0,    92 ) \
-    PARAM_ENTRY(CAT_BMS,       BMS_VmaxLimit, "V",     0,      10,     4.2,    93 ) \
+    PARAM_ENTRY(CAT_BMS,       BMS_VminLimit, "mV",     0,      10,     3.0,    92 ) \
+    PARAM_ENTRY(CAT_BMS,       BMS_VmaxLimit, "mV",     0,      10,     4.2,    93 ) \
     PARAM_ENTRY(CAT_BMS,       BMS_TminLimit, "°C",    -100,   100,    5,      94 ) \
     PARAM_ENTRY(CAT_BMS,       BMS_TmaxLimit, "°C",    -100,   100,    50,     95 ) \
     PARAM_ENTRY(CAT_HEATER,    Heater,      HTTYPE,    0,      2,      0,      57 ) \
@@ -151,8 +151,8 @@
     VALUE_ENTRY(KWh,           "kwh",               2013 ) \
     VALUE_ENTRY(AMPh,          "Ah",                2014 ) \
     VALUE_ENTRY(SOC,           "%",                 2015 ) \
-    VALUE_ENTRY(BMS_Vmin,      "V",                 2084 ) \
-    VALUE_ENTRY(BMS_Vmax,      "V",                 2085 ) \
+    VALUE_ENTRY(BMS_Vmin,      "mV",                 2084 ) \
+    VALUE_ENTRY(BMS_Vmax,      "mV",                 2085 ) \
     VALUE_ENTRY(BMS_Tmin,      "°C",                2086 ) \
     VALUE_ENTRY(BMS_Tmax,      "°C",                2087 ) \
     VALUE_ENTRY(BMS_ChargeLim, "A",                 2088 ) \

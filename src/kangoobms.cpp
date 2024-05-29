@@ -67,8 +67,12 @@ void KangooBMS::DecodeCAN(int id, uint8_t *data)
       Param::SetFloat(Param::SOC, stateOfCharge);
    } else if (id == 0x424) {
 
+      minTempC = (uint8_t)(data[4]) - 40;
+      maxTempC = (uint8_t)(data[7]) - 40;
+
    } else if (id == 0x425) {
-      
+      minCellV = (((float)(((data[6] & 0x01) << 8) + data[7]) + 100) * 10);
+      maxCellV = ((float)(((data[4] & 0x03) << 7) + ((data[5] >> 1) + 100)) * 10);
    }
 }
 
