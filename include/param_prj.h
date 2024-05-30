@@ -95,10 +95,10 @@
     PARAM_ENTRY(CAT_CHARGER,   ChgEff,     "%",       0,      100,   90,      121) \
     PARAM_ENTRY(CAT_DCDC,      DCdc_Type,   DCDCTYPES, 0,      1,      0,      105 ) \
     PARAM_ENTRY(CAT_DCDC,      DCSetPnt,    "V",       9,      15,     14,     106 ) \
-    PARAM_ENTRY(CAT_BMS,       BMS_Mode,    BMSMODES,  0,      3,      0,      90 ) \
+    PARAM_ENTRY(CAT_BMS,       BMS_Mode,    BMSMODES,  0,      4,      0,      90 ) \
     PARAM_ENTRY(CAT_BMS,       BMS_Timeout,  "sec",    1,      120,    10,     91 ) \
-    PARAM_ENTRY(CAT_BMS,       BMS_VminLimit, "V",     0,      10,     3.0,    92 ) \
-    PARAM_ENTRY(CAT_BMS,       BMS_VmaxLimit, "V",     0,      10,     4.2,    93 ) \
+    PARAM_ENTRY(CAT_BMS,       BMS_VminLimit, "mV",     0,      10,     3.0,    92 ) \
+    PARAM_ENTRY(CAT_BMS,       BMS_VmaxLimit, "mV",     0,      10,     4.2,    93 ) \
     PARAM_ENTRY(CAT_BMS,       BMS_TminLimit, "°C",    -100,   100,    5,      94 ) \
     PARAM_ENTRY(CAT_BMS,       BMS_TmaxLimit, "°C",    -100,   100,    50,     95 ) \
     PARAM_ENTRY(CAT_HEATER,    Heater,      HTTYPE,    0,      2,      0,      57 ) \
@@ -152,8 +152,8 @@
     VALUE_ENTRY(KWh,           "kwh",               2013 ) \
     VALUE_ENTRY(AMPh,          "Ah",                2014 ) \
     VALUE_ENTRY(SOC,           "%",                 2015 ) \
-    VALUE_ENTRY(BMS_Vmin,      "V",                 2084 ) \
-    VALUE_ENTRY(BMS_Vmax,      "V",                 2085 ) \
+    VALUE_ENTRY(BMS_Vmin,      "mV",                 2084 ) \
+    VALUE_ENTRY(BMS_Vmax,      "mV",                 2085 ) \
     VALUE_ENTRY(BMS_Tmin,      "°C",                2086 ) \
     VALUE_ENTRY(BMS_Tmax,      "°C",                2087 ) \
     VALUE_ENTRY(BMS_ChargeLim, "A",                 2088 ) \
@@ -241,7 +241,7 @@
 #define INVMODES     "0=None, 1=Leaf_Gen1, 2=GS450H, 3=UserCAN, 4=OpenI, 5=Prius_Gen3, 6=Outlander, 7=GS300H 8=RearOutlander"
 #define PLTMODES     "0=Absent, 1=ACStd, 2=ACchg, 3=Error, 4=CCS_Not_Rdy, 5=CCS_Rdy, 6=Static"
 #define VEHMODES     "0=BMW_E46, 1=BMW_E65, 2=Classic, 3=None, 5=BMW_E39, 6=VAG, 7=Subaru, 8=BMW_E31"
-#define BMSMODES     "0=Off, 1=SimpBMS, 2=TiDaisychainSingle, 3=TiDaisychainDual"
+#define BMSMODES     "0=Off, 1=SimpBMS, 2=TiDaisychainSingle, 3=TiDaisychainDual, 4=RenaultKangoo33"
 #define OPMODES      "0=Off, 1=Run, 2=Precharge, 3=PchFail, 4=Charge"
 #define DOW          "0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat"
 #define CHGTYPS      "0=Off, 1=AC, 2=DCFC"
@@ -365,7 +365,9 @@ enum BMSModes
     BMSModeNoBMS = 0,
     BMSModeSimpBMS = 1,
     BMSModeDaisychainSingleBMS = 2,
-    BMSModeDaisychainDualBMS = 3
+    BMSModeDaisychainDualBMS = 3,
+    BMSRenaultKangoo33BMS = 4
+
 };
 
 enum DCDCModes
