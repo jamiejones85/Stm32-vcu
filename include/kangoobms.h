@@ -27,6 +27,7 @@ class KangooBMS: public BMS
       virtual void SetCanInterface(CanHardware* c);
       void DecodeCAN(int id, uint8_t * data);
       float MaxChargeCurrent();
+      float GetCurrent();
       void Task100Ms();
    private:
       bool BMSDataValid();
@@ -39,5 +40,6 @@ class KangooBMS: public BMS
       float maxTempC = 0;
       float stateOfCharge = 0;
       float current = 0;
+      float remainingKHW = 0;
 };
 #endif // SIMPBMS_H

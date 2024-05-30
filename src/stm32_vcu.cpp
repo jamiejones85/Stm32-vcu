@@ -267,7 +267,11 @@ static void Ms100Task(void)
     Param::SetInt(Param::lasterr, ErrorMessage::GetLastError());
     int opmode = Param::GetInt(Param::opmode);
     utils::SelectDirection(selectedVehicle, selectedShifter);
-    utils::CalcSOC();
+
+    //don't override value from BMS
+    if (Param::GetInt(Param::BMS_Mode) != BMSModes::BMSRenaultKangoo33BMS) {
+        utils::CalcSOC();
+    }
 
     Param::SetInt(Param::cruisestt, selectedVehicle->GetCruiseState());
     Param::SetFloat(Param::FrontRearBal, selectedVehicle->GetFrontRearBalance());
@@ -436,6 +440,10 @@ static void Ms10Task(void)
     //////////////////////////////////////////////////
     //            MODE CONTROL SECTION              //
     //////////////////////////////////////////////////
+    if (Param::GetInt(Param::BMS_Mode) == BMSModes::BMSRenaultKangoo33BMS) {
+        Param::SetFloat(Param::udc, BMSRenaultKangoo33.GetCurrent());
+    }
+    
     float udc = utils::ProcessUdc(speed);
     stt |= Param::GetInt(Param::pot) <= Param::GetInt(Param::potmin) ? STAT_NONE : STAT_POTPRESSED;
     stt |= udc >= Param::GetFloat(Param::udcsw) ? STAT_NONE : STAT_UDCBELOWUDCSW;

@@ -259,55 +259,60 @@ void SelectDirection(Vehicle* vehicle, Shifter* shifter)
 
 float ProcessUdc(int motorSpeed)
 {
+    if (Param::GetInt(Param::BMS_Mode) != BMSModes::BMSRenaultKangoo33BMS) {
 
-    if (Param::GetInt(Param::Type) == 0)
-    {
-        float udc = ((float)ISA::Voltage)/1000;//get voltage from isa sensor and post to parameter database
-        Param::SetFloat(Param::udc, udc);
-        float udc2 = ((float)ISA::Voltage2)/1000;//get voltage from isa sensor and post to parameter database
-        Param::SetFloat(Param::udc2, udc2);
-        float udc3 = ((float)ISA::Voltage3)/1000;//get voltage from isa sensor and post to parameter database
-        Param::SetFloat(Param::udc3, udc3);
-        float idc = ((float)ISA::Amperes)/1000;//get current from isa sensor and post to parameter database
-        Param::SetFloat(Param::idc, idc);
-        float kw = ((float)ISA::KW)/1000;//get power from isa sensor and post to parameter database
-        Param::SetFloat(Param::power, kw);
-        float kwh = ((float)ISA::KWh)/1000;//get kwh from isa sensor and post to parameter database
-        Param::SetFloat(Param::KWh, kwh);
-        float Amph = ((float)ISA::Ah)/3600;//get Ah from isa sensor and post to parameter database
-        Param::SetFloat(Param::AMPh, Amph);
-        float deltaVolts1 = (udc2 / 2) - udc3;
-        float deltaVolts2 = (udc2 + udc3) - udc;
-        Param::SetFloat(Param::deltaV, MAX(deltaVolts1, deltaVolts2));
+        if (Param::GetInt(Param::Type) == 0)
+        {
+            float udc = ((float)ISA::Voltage)/1000;//get voltage from isa sensor and post to parameter database
+            Param::SetFloat(Param::udc, udc);
+            float udc2 = ((float)ISA::Voltage2)/1000;//get voltage from isa sensor and post to parameter database
+            Param::SetFloat(Param::udc2, udc2);
+            float udc3 = ((float)ISA::Voltage3)/1000;//get voltage from isa sensor and post to parameter database
+            Param::SetFloat(Param::udc3, udc3);
+            float idc = ((float)ISA::Amperes)/1000;//get current from isa sensor and post to parameter database
+            Param::SetFloat(Param::idc, idc);
+            float kw = ((float)ISA::KW)/1000;//get power from isa sensor and post to parameter database
+            Param::SetFloat(Param::power, kw);
+            float kwh = ((float)ISA::KWh)/1000;//get kwh from isa sensor and post to parameter database
+            Param::SetFloat(Param::KWh, kwh);
+            float Amph = ((float)ISA::Ah)/3600;//get Ah from isa sensor and post to parameter database
+            Param::SetFloat(Param::AMPh, Amph);
+            float deltaVolts1 = (udc2 / 2) - udc3;
+            float deltaVolts2 = (udc2 + udc3) - udc;
+            Param::SetFloat(Param::deltaV, MAX(deltaVolts1, deltaVolts2));
+        }
+
+        else if (Param::GetInt(Param::Type) == 1)
+
+        {
+            float udc = ((float)SBOX::Voltage2)/1000;//get output voltage from sbox sensor and post to parameter database
+            Param::SetFloat(Param::udc, udc);
+            float udc2 = ((float)SBOX::Voltage)/1000;//get battery voltage from sbox sensor and post to parameter database
+            Param::SetFloat(Param::udc2, udc2);
+            float udc3 = 0;//((float)ISA::Voltage3)/1000;//get voltage from isa sensor and post to parameter database
+            Param::SetFloat(Param::udc3, udc3);
+            float idc = ((float)SBOX::Amperes)/1000;//get current from sbox sensor and post to parameter database
+            Param::SetFloat(Param::idc, idc);
+            float kw = (udc*idc)/1000;//get power from isa sensor and post to parameter database
+            Param::SetFloat(Param::power, kw);
+        }
+
+        else if (Param::GetInt(Param::Type) == 2)
+
+        {
+            float udc = ((float)VWBOX::Voltage)*0.5;//get output voltage from sbox sensor and post to parameter database
+            Param::SetFloat(Param::udc, udc);
+            float udc2 = ((float)VWBOX::Voltage2)*0.0625;//get battery voltage from sbox sensor and post to parameter database
+            Param::SetFloat(Param::udc2, udc2);
+            float udc3 = 0;//((float)ISA::Voltage3)/1000;//get voltage from isa sensor and post to parameter database
+            Param::SetFloat(Param::udc3, udc3);
+            float idc = ((float)VWBOX::Amperes)*0.1;//get current from sbox sensor and post to parameter database
+            Param::SetFloat(Param::idc, idc);
+        }
+
     }
 
-    else if (Param::GetInt(Param::Type) == 1)
 
-    {
-        float udc = ((float)SBOX::Voltage2)/1000;//get output voltage from sbox sensor and post to parameter database
-        Param::SetFloat(Param::udc, udc);
-        float udc2 = ((float)SBOX::Voltage)/1000;//get battery voltage from sbox sensor and post to parameter database
-        Param::SetFloat(Param::udc2, udc2);
-        float udc3 = 0;//((float)ISA::Voltage3)/1000;//get voltage from isa sensor and post to parameter database
-        Param::SetFloat(Param::udc3, udc3);
-        float idc = ((float)SBOX::Amperes)/1000;//get current from sbox sensor and post to parameter database
-        Param::SetFloat(Param::idc, idc);
-        float kw = (udc*idc)/1000;//get power from isa sensor and post to parameter database
-        Param::SetFloat(Param::power, kw);
-    }
-
-    else if (Param::GetInt(Param::Type) == 2)
-
-    {
-        float udc = ((float)VWBOX::Voltage)*0.5;//get output voltage from sbox sensor and post to parameter database
-        Param::SetFloat(Param::udc, udc);
-        float udc2 = ((float)VWBOX::Voltage2)*0.0625;//get battery voltage from sbox sensor and post to parameter database
-        Param::SetFloat(Param::udc2, udc2);
-        float udc3 = 0;//((float)ISA::Voltage3)/1000;//get voltage from isa sensor and post to parameter database
-        Param::SetFloat(Param::udc3, udc3);
-        float idc = ((float)VWBOX::Amperes)*0.1;//get current from sbox sensor and post to parameter database
-        Param::SetFloat(Param::idc, idc);
-    }
     float udclim = Param::GetFloat(Param::udclim);
     float udc = Param::GetFloat(Param::udc);
     // Currently unused parameters:

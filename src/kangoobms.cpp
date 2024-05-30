@@ -43,7 +43,10 @@ bool KangooBMS::BMSDataValid() {
    return true;
 }
 
-
+float KangooBMS::GetCurrent() 
+{
+   return current;
+}
 
 // Return the maximum charge current allowed by the BMS.
 float KangooBMS::MaxChargeCurrent()
@@ -73,6 +76,7 @@ void KangooBMS::DecodeCAN(int id, uint8_t *data)
    } else if (id == 0x425) {
       minCellV = (((float)(((data[6] & 0x01) << 8) + data[7]) + 100) * 10);
       maxCellV = ((float)(((data[4] & 0x03) << 7) + ((data[5] >> 1) + 100)) * 10);
+      remainingKHW = (float)(data[1] * 0.1);
    }
 }
 
@@ -99,6 +103,7 @@ void KangooBMS::Task100Ms() {
       Param::SetFloat(Param::BMS_Vmax, maxCellV);
       Param::SetFloat(Param::BMS_Tmin, minTempC);
       Param::SetFloat(Param::BMS_Tmax, maxTempC);
+      Param::SetFloat(Param::KWh, remainingKHW);
    }
    else
    {
@@ -106,5 +111,7 @@ void KangooBMS::Task100Ms() {
       Param::SetFloat(Param::BMS_Vmax, 0);
       Param::SetFloat(Param::BMS_Tmin, 0);
       Param::SetFloat(Param::BMS_Tmax, 0);
+      Param::SetFloat(Param::KWh, 0);
+
    }
 }
