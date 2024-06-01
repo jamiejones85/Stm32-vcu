@@ -312,6 +312,11 @@ float ProcessUdc(int motorSpeed)
 
     }
 
+     if (Param::GetInt(Param::Type) == 3) {
+        Param::SetFloat(Param::udc, outlanderCharger::GetBatteryVolts());
+
+     }
+
 
     float udclim = Param::GetFloat(Param::udclim);
     float udc = Param::GetFloat(Param::udc);

@@ -35,6 +35,8 @@ void KangooBMS::SetCanInterface(CanHardware* c)
    can->RegisterUserMessage(0x155);
    can->RegisterUserMessage(0x424);
    can->RegisterUserMessage(0x425);
+   can->RegisterUserMessage(0x7BB);
+
 }
 
 bool KangooBMS::BMSDataValid() {
@@ -84,34 +86,38 @@ void KangooBMS::Task100Ms() {
    // Decrement timeout counter.
    if(timeoutCounter > 0) timeoutCounter--;
 
-   //send can message
-   uint8_t bytes[8];
-   bytes[0]=0x07;
-   bytes[1]=0x1D;
-   bytes[2]=0x00;
-   bytes[3]=0x02;
-   bytes[4]=0x5D;
-   bytes[5]=0x80;
-   bytes[6]=0x5D;
-   bytes[7]=0xD8;
+   if(Param::GetInt(Param::opmode) != MOD_OFF) {
+      //send can message
+      uint8_t bytes[8];
+      bytes[0]=0x07;
+      bytes[1]=0x1D;
+      bytes[2]=0x00;
+      bytes[3]=0x02;
+      bytes[4]=0x5D;
+      bytes[5]=0x80;
+      bytes[6]=0x5D;
+      bytes[7]=0xD8;
 
-   can->Send(0x423, (uint32_t*)bytes, 8);
+      can->Send(0x423, (uint32_t*)bytes, 8);
 
+      if(BMSDataValid()) {
+         Param::SetFloat(Param::BMS_Vmin, minCellV);
+         Param::SetFloat(Param::BMS_Vmax, maxCellV);
+         Param::SetFloat(Param::BMS_Tmin, minTempC);
+         Param::SetFloat(Param::BMS_Tmax, maxTempC);
+         Param::SetFloat(Param::KWh, remainingKHW);
+      }
+      else
+      {
+         Param::SetFloat(Param::BMS_Vmin, 0);
+         Param::SetFloat(Param::BMS_Vmax, 0);
+         Param::SetFloat(Param::BMS_Tmin, 0);
+         Param::SetFloat(Param::BMS_Tmax, 0);
+         Param::SetFloat(Param::KWh, 0);
+      }
 
-   if(BMSDataValid()) {
-      Param::SetFloat(Param::BMS_Vmin, minCellV);
-      Param::SetFloat(Param::BMS_Vmax, maxCellV);
-      Param::SetFloat(Param::BMS_Tmin, minTempC);
-      Param::SetFloat(Param::BMS_Tmax, maxTempC);
-      Param::SetFloat(Param::KWh, remainingKHW);
    }
-   else
-   {
-      Param::SetFloat(Param::BMS_Vmin, 0);
-      Param::SetFloat(Param::BMS_Vmax, 0);
-      Param::SetFloat(Param::BMS_Tmin, 0);
-      Param::SetFloat(Param::BMS_Tmax, 0);
-      Param::SetFloat(Param::KWh, 0);
 
-   }
+
+
 }

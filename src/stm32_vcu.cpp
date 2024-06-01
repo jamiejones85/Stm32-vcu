@@ -626,6 +626,7 @@ static void UpdateVehicle()
         break;
     case vehicles::vBMW_E65:
         selectedVehicle = &e65Vehicle;
+        e65Vehicle.SetE90(false);
         break;
     case vehicles::vVAG:
         selectedVehicle = &vagVehicle;
@@ -635,6 +636,11 @@ static void UpdateVehicle()
         break;
     case vehicles::vBMW_E31:
         selectedVehicle = &e31Vehicle;
+        break;
+    case vehicles::vBMW_E90:
+        selectedVehicle = &e65Vehicle;
+        e65Vehicle.SetE90(true);
+
         break;
     }
     //This will call SetCanFilters() via the Clear Callback
