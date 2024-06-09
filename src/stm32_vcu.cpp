@@ -308,6 +308,13 @@ static void Ms100Task(void)
         IOMatrix::GetPin(IOMatrix::RUNINDICATION)->Clear();
     }
 
+    if (opmode==MOD_RUN || opmode==MOD_CHARGE) {
+        IOMatrix::GetPin(IOMatrix::DCDC_ENA)->Set();
+    } else 
+    {
+        IOMatrix::GetPin(IOMatrix::DCDC_ENA)->Clear();
+    }
+
 
     Param::SetFloat(Param::tmphs, selectedInverter->GetInverterTemperature()); //send inverter temp to web interface
     Param::SetFloat(Param::tmpm, selectedInverter->GetMotorTemperature()); //send motor temp to web interface

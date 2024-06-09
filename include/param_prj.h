@@ -222,6 +222,7 @@
     VALUE_ENTRY(tmpheater,     "°C",                2096 ) \
     VALUE_ENTRY(udcheater,     "V",                 2097 ) \
     VALUE_ENTRY(powerheater,   "W",                 2098 ) \
+    VALUE_ENTRY(BMS_V,         "V",                 2099 ) \
 
 //Next value Id: 2099
 
@@ -230,7 +231,7 @@
 #define VERSTR STRINGIFY(4=VER)
 #define PINFUNCS     "0=None, 1=ChaDeMoAlw, 2=OBCEnable, 3=HeaterEnable, 4=RunIndication, 5=WarnIndication," \
                      "6=CoolantPump, 7=NegContactor, 8=BrakeLight, 9=ReverseLight, 10=HeatReq, 11=HVRequest," \
-                     "12=DCFCRequest, 13=BrakeVacPump, 14=PwmTim3"
+                     "12=DCFCRequest, 13=BrakeVacPump, 14=DCDCEna, 15=PwmTim3"
 #define APINFUNCS    "0=None, 1=ProxPilot, 2=BrakeVacSensor"
 #define SHIFTERS     "0=None, 1=BMW_F30, 2=JLR_G1, 3=JLR_G2"
 #define SHNTYPE      "0=ISA, 1=SBOX, 2=VAG, 3=OutlanderCharger"

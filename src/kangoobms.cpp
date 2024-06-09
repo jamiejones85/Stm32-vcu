@@ -69,7 +69,8 @@ void KangooBMS::DecodeCAN(int id, uint8_t *data)
 
       current = (float) ((((data[1] << 8) & 0x0F) + data[2]) * 0.25) - 500;
 
-      Param::SetFloat(Param::SOC, stateOfCharge);
+      batteryVoltage = (float) ((data[6] << 8) + data[7]) / 2;
+
    } else if (id == 0x424) {
 
       minTempC = (uint8_t)(data[4]) - 40;
@@ -79,7 +80,7 @@ void KangooBMS::DecodeCAN(int id, uint8_t *data)
       minCellV = (((float)(((data[6] & 0x01) << 8) + data[7]) + 100) * 10);
       maxCellV = ((float)(((data[4] & 0x03) << 7) + ((data[5] >> 1) + 100)) * 10);
       remainingKHW = (float)(data[1] * 0.1);
-   }
+   } 
 }
 
 void KangooBMS::Task100Ms() {
@@ -100,24 +101,16 @@ void KangooBMS::Task100Ms() {
 
       can->Send(0x423, (uint32_t*)bytes, 8);
 
-      if(BMSDataValid()) {
-         Param::SetFloat(Param::BMS_Vmin, minCellV);
-         Param::SetFloat(Param::BMS_Vmax, maxCellV);
-         Param::SetFloat(Param::BMS_Tmin, minTempC);
-         Param::SetFloat(Param::BMS_Tmax, maxTempC);
-         Param::SetFloat(Param::KWh, remainingKHW);
-      }
-      else
-      {
-         Param::SetFloat(Param::BMS_Vmin, 0);
-         Param::SetFloat(Param::BMS_Vmax, 0);
-         Param::SetFloat(Param::BMS_Tmin, 0);
-         Param::SetFloat(Param::BMS_Tmax, 0);
-         Param::SetFloat(Param::KWh, 0);
-      }
-
    }
 
+   Param::SetFloat(Param::BMS_Vmin, minCellV);
+   Param::SetFloat(Param::BMS_Vmax, maxCellV);
+   Param::SetFloat(Param::BMS_Tmin, minTempC);
+   Param::SetFloat(Param::BMS_Tmax, maxTempC);
+   Param::SetFloat(Param::KWh, remainingKHW);
+   Param::SetFloat(Param::SOC, stateOfCharge);
+   Param::SetFloat(Param::BMS_V, batteryVoltage);
+   Param::SetFloat(Param::udcsw, batteryVoltage - 30);
 
 
 }
