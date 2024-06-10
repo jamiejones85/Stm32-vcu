@@ -91,6 +91,7 @@
 #include "rearoutlanderinverter.h"
 #include "NoVehicle.h"
 #include "kangoobms.h"
+#include "DigiPot.h"
 
 #define PRECHARGE_TIMEOUT 5  //5s
 

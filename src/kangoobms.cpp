@@ -94,13 +94,21 @@ void KangooBMS::Task100Ms() {
       bytes[1]=0x1D;
       bytes[2]=0x00;
       bytes[3]=0x02;
-      bytes[4]=0x5D;
+      bytes[4]=0xB2;
       bytes[5]=0x80;
-      bytes[6]=0x5D;
+      bytes[6]=0xB2;
       bytes[7]=0xD8;
 
+      if (messageCounter >=5 ) {
+         bytes[4]=0x5D;
+         bytes[6]=0x5D;
+      }
       can->Send(0x423, (uint32_t*)bytes, 8);
 
+      messageCounter++;
+      if (messageCounter > 10) {
+         messageCounter = 0;
+      }
    }
 
    Param::SetFloat(Param::BMS_Vmin, minCellV);

@@ -32,6 +32,7 @@ class KangooBMS: public BMS
    private:
       bool BMSDataValid();
       bool ChargeAllowed();
+      int messageCounter = 0;
       int chargeCurrentLimit = 0;
       int timeoutCounter = 0;
       float minCellV = 0;
