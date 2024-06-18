@@ -15,7 +15,7 @@ uint8_t A90=0xe9;//0x0A9 first counter byte
 uint8_t A91=0x00;//0x0A9 second counter byte
 uint8_t BA5=0x4d;//0x0BA first counter byte(byte 5)
 uint8_t BA6=0x80;//0x0BA second counter byte(byte 6)
-
+uint8_t AA1=0x0F;
 
 void BMW_E65::SetCanInterface(CanHardware* c)
 {
@@ -152,15 +152,34 @@ void BMW_E65::Task10Ms()
 {
     if(CANWake)
     {
+
+        uint8_t data[8];
+        int rpm = 0;
+
         if (Ready())
         {
-            uint32_t data[2];
-            int rpm = MAX(750, revCounter) * 4; // rpm value for E65
-
-            data[0] = 0xff595f;
-            data[1] = 0x99800000 | rpm;
-            can->Send(0x0AA, data); //Send on CAN2
+            data[1] = 0x50 | AA1;  //Counter for 0xAA Byte 0
+            data[2] = 0x07;
+            data[6] = 0x94;
+            data[7] = 0x00;
+            rpm =  MAX(750, revCounter) * 4; // rpm value for E65
+        } else {
+            data[1] = 0x30 | AA1;  //Counter for 0xAA Byte 0
+            data[2] = 0xFE;
+            data[6] = 0x84;
+            data[7] = 0x00;
         }
+
+        data[3] = 0x00;  //Pedal position 0-255
+        data[4] = rpm;   //lowByte(RPM_A);
+        data[5] = rpm >> 8;  //highByte(RPM_A);
+
+        int16_t check_AA = (data[1] + data[2] + data[3] + data[4] + data[5] + data[6] + data[7] + 0xAA);
+        check_AA = (check_AA / 0x100) + (check_AA & 0xff);
+        check_AA = check_AA & 0xff;
+        data[0] = check_AA;  //checksum
+
+        can->Send(0x0AA, (uint32_t*)data, 8); //Send on CAN2
 
         SendAbsDscMessages(Param::GetBool(Param::din_brake));
     }
@@ -192,7 +211,6 @@ void BMW_E65::Task200Ms()
 {
     if(CANWake)
     {
-
         if (isE90)
         {
             //update shitPos
@@ -241,6 +259,8 @@ void BMW_E65::Task200Ms()
         {
             Gcount=0x0D;
         }
+
+        SetFuelGauge(Param::GetFloat(Param::SOC));
     }
 }
 
@@ -315,7 +335,7 @@ void BMW_E65::SendAbsDscMessages(bool Brake_In)
     A91++;
     BA5++;
     BA6++;
-
+    AA1++;
     if (BA5==0x5C) //reload initial condition
     {
         A80=0xbe;//0x0A8 first counter byte
@@ -324,6 +344,7 @@ void BMW_E65::SendAbsDscMessages(bool Brake_In)
         A91=0x00;//0x0A9 second counter byte
         BA5=0x4d;//0x0BA first counter byte(byte 5)
         BA6=0x80;//0x0BA second counter byte(byte 6)
+        AA1=0x00;
     }
 
 }
@@ -380,3 +401,42 @@ bool BMW_E65::GetGear(Vehicle::gear& outGear)
     outGear = gear;    //send the shifter pos
     return true; //Let caller know we set a valid gear
 }
+
+void BMW_E65::SetFuelGauge(float level) {
+    int pot1 = 0;
+    int pot2 = 0;
+    const int fuelGaugeMap[20][3] = {
+        { 5, 1, 0 },
+        { 10, 1, 1 },
+        { 15, 2, 1 },
+        { 20, 2, 2 },
+        { 25, 3, 2 },
+        { 30, 4, 3 },
+        { 35, 4, 4 },
+        { 40, 5, 4 },
+        { 45, 5, 5 },
+        { 50, 6, 6 },
+        { 55, 7, 6 },
+        { 60, 8, 7 },
+        { 65, 8, 8 },                       
+        { 70, 9, 9 },
+        { 75, 10, 10 },
+        { 80, 11, 11 },
+        { 85, 12, 12 },
+        { 90, 14, 14 },
+        { 95, 17, 16 },
+        { 100, 19, 19 }
+    };
+
+    for(int i = 0; i < 20; i++) {
+        if (level >= fuelGaugeMap[i][0]) {
+            pot1 = fuelGaugeMap[i][1];
+            pot2 = fuelGaugeMap[i][2];
+        }
+    }
+
+    Param::SetInt(Param::DigiPot1Step, pot1);
+    Param::SetInt(Param::DigiPot2Step, pot2);
+}
+
+

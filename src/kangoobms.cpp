@@ -120,5 +120,8 @@ void KangooBMS::Task100Ms() {
    Param::SetFloat(Param::BMS_V, batteryVoltage);
    Param::SetFloat(Param::udcsw, batteryVoltage - 30);
 
+   //On the Kangoo charging is positive current, discharge is negative
+   Param::SetFloat(Param::idc, current);
+
 
 }

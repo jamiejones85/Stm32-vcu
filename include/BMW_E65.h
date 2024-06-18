@@ -30,10 +30,11 @@ public:
    void handle480(uint32_t data[2]);
    void SetE90(bool e90) { isE90 = e90; }
    void Engine_Data();
+   void SetFuelGauge(float level);
+
 
 private:
    void SendAbsDscMessages(bool Brake_In);
-
    bool terminal15On;
    bool terminalROn;
    bool terminal50On;
