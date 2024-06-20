@@ -35,6 +35,10 @@ class KangooBMS: public BMS
       int messageCounter = 0;
       int chargeCurrentLimit = 0;
       int timeoutCounter = 0;
+      uint16_t maxChargeAllowed = 0;
+      uint8_t maxInput = 0;
+      uint8_t maxOutput = 0;
+      uint16_t isolationResistance = 0;
       float minCellV = 0;
       float maxCellV = 0;
       float minTempC = 0;

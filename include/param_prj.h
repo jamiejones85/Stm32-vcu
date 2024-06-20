@@ -224,9 +224,12 @@
     VALUE_ENTRY(tmpheater,     "°C",                2096 ) \
     VALUE_ENTRY(udcheater,     "V",                 2097 ) \
     VALUE_ENTRY(powerheater,   "W",                 2098 ) \
-    VALUE_ENTRY(BMS_V,         "V",                 2099 ) \
+    VALUE_ENTRY(BMS_MaxInput,  "kW",                2099 ) \
+    VALUE_ENTRY(BMS_MaxOutput, "kW",                2100 ) \
+    VALUE_ENTRY(BMS_MaxCharge, "W",                 2101 ) \
+    VALUE_ENTRY(BMS_Isolation, "Ohm",               2102 ) \
 
-//Next value Id: 2099
+//Next value Id: 2103
 
 
 

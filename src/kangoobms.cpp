@@ -67,19 +67,30 @@ void KangooBMS::DecodeCAN(int id, uint8_t *data)
       stateOfCharge = (float) ((data[4] << 8) + data[5]) * 0.0025;
       //maxCharging = data[0] * 300;
 
-      current = (float) ((((data[1] << 8) & 0x0F) + data[2]) * 0.25) - 500;
+      uint16_t rawCurrent = ((data[1] << 8) + data[2]) & 0xFFF;
+      rawCurrent = (float)(rawCurrent * 0.25);
+      rawCurrent = rawCurrent - 500;
+      current = rawCurrent;
 
       batteryVoltage = (float) ((data[6] << 8) + data[7]) / 2;
+
+      maxChargeAllowed = data[0] * 300;
 
    } else if (id == 0x424) {
 
       minTempC = (uint8_t)(data[4]) - 40;
       maxTempC = (uint8_t)(data[7]) - 40;
 
+      maxInput = data[2] * 0.5;
+      maxOutput = data[3] * 0.5;
+
    } else if (id == 0x425) {
       minCellV = (((float)(((data[6] & 0x01) << 8) + data[7]) + 100) * 10);
       maxCellV = ((float)(((data[4] & 0x03) << 7) + ((data[5] >> 1) + 100)) * 10);
       remainingKHW = (float)(data[1] * 0.1);
+
+      isolationResistance = data[4] >> 2;
+      isolationResistance = isolationResistance + (data[3] << 6);
    } 
 }
 
@@ -117,8 +128,11 @@ void KangooBMS::Task100Ms() {
    Param::SetFloat(Param::BMS_Tmax, maxTempC);
    Param::SetFloat(Param::KWh, remainingKHW);
    Param::SetFloat(Param::SOC, stateOfCharge);
-   Param::SetFloat(Param::BMS_V, batteryVoltage);
    Param::SetFloat(Param::udcsw, batteryVoltage - 30);
+   Param::SetInt(Param::BMS_MaxCharge, maxChargeAllowed);
+   Param::SetInt(Param::BMS_MaxInput, maxInput);
+   Param::SetInt(Param::BMS_MaxOutput, maxOutput);
+   Param::SetInt(Param::BMS_Isolation, isolationResistance);
 
    //On the Kangoo charging is positive current, discharge is negative
    Param::SetFloat(Param::idc, current);
