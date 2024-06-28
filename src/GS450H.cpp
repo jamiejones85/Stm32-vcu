@@ -260,6 +260,22 @@ void GS450HClass::GS450Hgear()//!!! should be ran every 10ms - ran before calcul
         DigIo::SL1_out.Set();
         DigIo::SL2_out.Set();
     }
+
+    if (gear == 3) //!!!High in FWD and Low in REV
+    {
+        int dir = Param::GetInt(Param::dir);
+        if (dir == -1) //reverse go low
+        {
+            DigIo::SP_out.Clear();
+            DigIo::SL1_out.Set();
+            DigIo::SL2_out.Set();
+        } else { //go high
+            DigIo::SP_out.Clear();
+            DigIo::SL1_out.Clear();
+            DigIo::SL2_out.Clear();
+        }
+
+    }
 }
 
 void GS450HClass::GS450Houtput()//!!! should be ran every 10ms

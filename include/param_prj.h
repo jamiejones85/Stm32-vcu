@@ -73,7 +73,7 @@
     PARAM_ENTRY(CAT_THROTTLE,  throtdead,   "%",       0,      50,     10,     76 ) \
     PARAM_ENTRY(CAT_THROTTLE,  RegenBrakeLight,   "%",    -100,     0,     -15,      128 ) \
     PARAM_ENTRY(CAT_THROTTLE,  throtrpmfilt,   "rpm/10ms",  0.1,    200,    15,    131 ) \
-    PARAM_ENTRY(CAT_LEXUS,     Gear,        LOWHIGH,   0,      2,      0,      27 ) \
+    PARAM_ENTRY(CAT_LEXUS,     Gear,        LOWHIGH,   0,      3,      0,      27 ) \
     PARAM_ENTRY(CAT_LEXUS,     OilPump,     "%",       0,      100,    50,     28 ) \
     PARAM_ENTRY(CAT_CRUISE,    cruisestep,  "rpm",     1,      1000,   200,    29 ) \
     PARAM_ENTRY(CAT_CRUISE,    cruiseramp,  "rpm/100ms",1,     1000,   20,     30 ) \
@@ -229,7 +229,7 @@
     VALUE_ENTRY(BMS_MaxCharge, "W",                 2101 ) \
     VALUE_ENTRY(BMS_Isolation, "Ohm",               2102 ) \
 
-//Next value Id: 2103
+//Next value Id: 2102
 
 
 
@@ -256,7 +256,7 @@
 #define CCS_STATUS   "0=NotRdy, 1=ready, 2=SWoff, 3=interruption, 4=Prech, 5=insulmon, 6=estop, 7=malfunction, 15=invalid"
 #define DIRS         "-1=Reverse, 0=Neutral, 1=Drive, 2=Park"
 #define ONOFF        "0=Off, 1=On, 2=na"
-#define LOWHIGH      "0=LOW, 1=HIGH, 2=AUTO"
+#define LOWHIGH      "0=LOW, 1=HIGH, 2=AUTO, 3=HIGHFWDLOWREV"
 #define OKERR        "0=Error, 1=Ok, 2=na"
 #define CANSPEEDS    "0=125k, 1=250k, 2=500k, 3=800k, 4=1M"
 #define CANIOS       "1=Cruise, 2=Start, 4=Brake, 8=Fwd, 16=Rev, 32=Bms"
@@ -403,7 +403,8 @@ enum Gear
 {
     LOW = 0,
     HIGH = 1,
-    AUTO = 2
+    AUTO = 2,
+    FWDHIGHREVLOW = 3
 };
 
 enum vehicles
