@@ -67,7 +67,7 @@ void KangooBMS::DecodeCAN(int id, uint8_t *data)
       stateOfCharge = (float) ((data[4] << 8) + data[5]) * 0.0025;
       //maxCharging = data[0] * 300;
 
-      uint16_t rawCurrent = ((data[1] << 8) + data[2]) & 0xFFF;
+      int16_t rawCurrent = ((data[1] << 8) + data[2]) & 0xFFF;
       rawCurrent = (float)(rawCurrent * 0.25);
       rawCurrent = rawCurrent - 500;
       current = rawCurrent;
@@ -135,7 +135,12 @@ void KangooBMS::Task100Ms() {
    Param::SetInt(Param::BMS_Isolation, isolationResistance);
 
    //On the Kangoo charging is positive current, discharge is negative
-   Param::SetFloat(Param::idc, current);
+   if (BMSDataValid()) {
+      Param::SetFloat(Param::idc, current);
+   } else {
+      Param::SetFloat(Param::idc, 0);
+   }
+
 
 
 }
