@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#define VER 2.17.A
+#define VER 2.17.Craflag
 
 
 /* Entries must be ordered as follows:
@@ -228,7 +228,10 @@
     VALUE_ENTRY(BMS_MaxOutput, "kW",                2100 ) \
     VALUE_ENTRY(BMS_MaxCharge, "W",                 2101 ) \
     VALUE_ENTRY(BMS_Isolation, "Ohm",               2102 ) \
-
+    VALUE_ENTRY(checksum4Counter, "",               2103 ) \
+    VALUE_ENTRY(dmaTransferSize, "",                2104 ) \
+    VALUE_ENTRY(dmaReceiveFlags, "",                2105 ) \
+    VALUE_ENTRY(usart2Flags, "",                    2106 ) \
 //Next value Id: 2102
 
 

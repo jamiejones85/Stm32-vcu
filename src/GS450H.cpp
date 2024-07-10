@@ -366,9 +366,9 @@ void GS450HClass::CalcHTMChecksum(uint16_t len)
 }
 
 
-void GS450HClass::Task1Ms()
+    void GS450HClass::Task1Ms()
 {
-
+    uint16_t transferSize;
     switch(htm_state)
     {
     case 0:
@@ -400,6 +400,13 @@ void GS450HClass::Task1Ms()
         htm_state++;
         break;
     case 3:
+
+        transferSize = dma_get_number_of_data(DMA1, DMA_CHANNEL6);
+        Param::SetInt(Param::dmaTransferSize, transferSize);
+
+        //Param::SetInt(Param::dmaReceiveFlags, (DMA_ISR(DMA1) & DMA_FLAGS << DMA_FLAG_OFFSET(DMA_CHANNEL6)) >> DMA_FLAG_OFFSET(DMA_CHANNEL6) );
+        Param::SetInt(Param::usart2Flags, USART_SR(USART2));
+
         if(VerifyMTHChecksum(100)==0 || dma_get_interrupt_flag(DMA1, DMA_CHANNEL6, DMA_TCIF)==0)
         {
             statusInv=0;
@@ -407,14 +414,16 @@ void GS450HClass::Task1Ms()
         else
         {
             //exchange data and prepare next HTM frame
-            dma_clear_interrupt_flags(DMA1, DMA_CHANNEL6, DMA_TCIF);
             statusInv=1;
             dc_bus_voltage=(((mth_data[82]|mth_data[83]<<8)-5)/2);
             temp_inv_water=(mth_data[42]|mth_data[43]<<8);
             temp_inv_inductor=(mth_data[86]|mth_data[87]<<8);
             mg1_speed=mth_data[6]|mth_data[7]<<8;
             mg2_speed=mth_data[31]|mth_data[32]<<8;
+
+
         }
+        dma_clear_interrupt_flags(DMA1, DMA_CHANNEL6, DMA_TCIF);
 
         mth_data[98]=0;
         mth_data[99]=0;
@@ -463,15 +472,15 @@ void GS450HClass::Task1Ms()
         */
         CalcHTMChecksum(80);
 
-        if(counter>100)
-        {
-//HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin );
-            counter = 0;
-        }
-        else
-        {
-            counter++;
-        }
+//         if(counter>100)
+//         {
+// //HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin );
+//             counter = 0;
+//         }
+//         else
+//         {
+//             counter++;
+//         }
 
         htm_state=0;
         break;
@@ -753,7 +762,7 @@ static void dma_read(uint8_t *data, int size)
     dma_enable_memory_increment_mode(DMA1, DMA_CHANNEL6);
     dma_set_peripheral_size(DMA1, DMA_CHANNEL6, DMA_CCR_PSIZE_8BIT);
     dma_set_memory_size(DMA1, DMA_CHANNEL6, DMA_CCR_MSIZE_8BIT);
-    dma_set_priority(DMA1, DMA_CHANNEL6, DMA_CCR_PL_LOW);
+    dma_set_priority(DMA1, DMA_CHANNEL6, DMA_CCR_PL_HIGH);
 
     dma_enable_channel(DMA1, DMA_CHANNEL6);
 
