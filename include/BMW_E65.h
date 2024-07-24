@@ -28,6 +28,7 @@ public:
    void handle130(uint32_t data[2]);
    void handle192(uint32_t data[2]);
    void handle480(uint32_t data[2]);
+   void handle1A0(uint32_t data[2]);
    void SetE90(bool e90) { isE90 = e90; }
    void Engine_Data();
    void SetFuelGauge(float level);
@@ -35,6 +36,7 @@ public:
 
 private:
    void SendAbsDscMessages(bool Brake_In);
+   long map(long x, long in_min, long in_max, long out_min, long out_max);
    bool terminal15On;
    bool terminalROn;
    bool terminal50On;

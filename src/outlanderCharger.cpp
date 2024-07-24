@@ -150,6 +150,7 @@ void outlanderCharger::Task100Ms()
       if(actVolts<Param::GetInt(Param::Voltspnt)) currentRamp++;
       if(actVolts>=Param::GetInt(Param::Voltspnt)) currentRamp--;
       if(currentRamp>=0x78) currentRamp=0x78;//clamp to max of 12A
+      if(currentRamp>Param::GetInt(Param::BMS_ChargeLim)) currentRamp = Param::GetInt(Param::BMS_ChargeLim);
       if(!pwmON)
         {
           tim_setup(); //toyota hybrid oil pump pwm timer used to supply a psuedo evse pilot to the charger

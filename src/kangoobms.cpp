@@ -55,6 +55,7 @@ float KangooBMS::MaxChargeCurrent()
 {
    // if(!ChargeAllowed()) return 0;
    // return chargeCurrentLimit / 1000.0;
+   return maxChargeAllowed / batteryVoltage;
 }
 
 // Process voltage and temperature message from SimpBMS.
@@ -137,6 +138,7 @@ void KangooBMS::Task100Ms() {
    Param::SetInt(Param::BMS_MaxInput, maxInput);
    Param::SetInt(Param::BMS_MaxOutput, maxOutput);
    Param::SetInt(Param::BMS_Isolation, isolationResistance);
+   Param::SetInt(Param::BMS_ChargeLim, MaxChargeCurrent());
 
    //On the Kangoo charging is positive current, discharge is negative
    if (BMSDataValid()) {

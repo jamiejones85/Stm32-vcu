@@ -231,7 +231,7 @@ float Throttle::CalcThrottle(int potval, int potIdx, bool brkpedal)
 
 
     //Do clever bits for regen and such.
-    if(speed < 100)//No regen under 100 rpm
+    if(speed < 100 || dir == -1)//No regen under 100 rpm
     {
         regenlim = 0;
     }

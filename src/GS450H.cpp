@@ -404,12 +404,19 @@ void GS450HClass::CalcHTMChecksum(uint16_t len)
         transferSize = dma_get_number_of_data(DMA1, DMA_CHANNEL6);
         Param::SetInt(Param::dmaTransferSize, transferSize);
 
-        //Param::SetInt(Param::dmaReceiveFlags, (DMA_ISR(DMA1) & DMA_FLAGS << DMA_FLAG_OFFSET(DMA_CHANNEL6)) >> DMA_FLAG_OFFSET(DMA_CHANNEL6) );
+        Param::SetInt(Param::dmaReceiveFlags, (DMA_ISR(DMA1) & DMA_FLAGS << DMA_FLAG_OFFSET(DMA_CHANNEL6)) >> DMA_FLAG_OFFSET(DMA_CHANNEL6) );
         Param::SetInt(Param::usart2Flags, USART_SR(USART2));
+
 
         if(VerifyMTHChecksum(100)==0 || dma_get_interrupt_flag(DMA1, DMA_CHANNEL6, DMA_TCIF)==0)
         {
             statusInv=0;
+                        //set speeds to 0 to prevent dynamic throttle/regen issues
+            mg1_speed=0;
+            mg2_speed=0;
+            //disable cruise
+            Param::SetInt(Param::cruisespeed, 0);
+            Param::SetInt(Param::errlights, 8);
         }
         else
         {
@@ -420,7 +427,7 @@ void GS450HClass::CalcHTMChecksum(uint16_t len)
             temp_inv_inductor=(mth_data[86]|mth_data[87]<<8);
             mg1_speed=mth_data[6]|mth_data[7]<<8;
             mg2_speed=mth_data[31]|mth_data[32]<<8;
-
+            Param::SetInt(Param::errlights, 0);
 
         }
         dma_clear_interrupt_flags(DMA1, DMA_CHANNEL6, DMA_TCIF);
@@ -522,6 +529,11 @@ void GS450HClass::CalcHTMChecksum(uint16_t len)
         {
 
             statusInv=0;
+            //set speeds to 0 to prevent dynamic throttle/regen issues
+            mg1_speed=0;
+            mg2_speed=0;
+            //disable cruise
+            Param::SetInt(Param::cruisespeed, 0);
         }
         else
         {
@@ -640,6 +652,11 @@ void GS450HClass::CalcHTMChecksum(uint16_t len)
 
             statusInv=0;
             inv_status=0;
+            //set speeds to 0 to prevent dynamic throttle/regen issues
+            mg1_speed=0;
+            mg2_speed=0;
+            //disable cruise
+            Param::SetInt(Param::cruisespeed, 0);
         }
         else
         {

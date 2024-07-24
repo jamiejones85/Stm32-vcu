@@ -148,24 +148,26 @@ static void Ms200Task(void)
     if(ChgSet==0 && !ChgLck) RunChg=true;//enable from webui if we are not locked out from an auto termination
     if(ChgSet==1) RunChg=false;//disable from webui
 
-    //Handle PP on the Charging port
-    if(Param::GetInt(Param::GPA1Func) == IOMatrix::PILOT_PROX || Param::GetInt(Param::GPA2Func) == IOMatrix::PILOT_PROX )
-    {
-        int ppThresh = Param::GetInt(Param::ppthresh);
-
-        int ppValue = IOMatrix::GetAnaloguePin(IOMatrix::PILOT_PROX)->Get();
-        Param::SetInt(Param::PPVal, ppValue);
-
-
-        //if PP is less than threshold and currently disabled and not already finished
-        if (ppValue < ppThresh && ChgSet==1 && !ChgLck)
+    if (opmode != MOD_RUN) {
+        //Handle PP on the Charging port
+        if(Param::GetInt(Param::GPA1Func) == IOMatrix::PILOT_PROX || Param::GetInt(Param::GPA2Func) == IOMatrix::PILOT_PROX )
         {
-            RunChg=true;
-        }
-        else if (ppValue > ppThresh)
-        {
-            //even if timer was enabled, change to disabled, we've unplugged
-            RunChg=false;
+            int ppThresh = Param::GetInt(Param::ppthresh);
+
+            int ppValue = IOMatrix::GetAnaloguePin(IOMatrix::PILOT_PROX)->Get();
+            Param::SetInt(Param::PPVal, ppValue);
+
+
+            //if PP is less than threshold and currently disabled and not already finished
+            if (ppValue < ppThresh && ChgSet==1 && !ChgLck)
+            {
+                RunChg=true;
+            }
+            else if (ppValue > ppThresh)
+            {
+                //even if timer was enabled, change to disabled, we've unplugged
+                RunChg=false;
+            }
         }
     }
 

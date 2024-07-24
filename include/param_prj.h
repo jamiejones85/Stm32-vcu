@@ -139,6 +139,7 @@
     PARAM_ENTRY(CAT_PWM,       Tim3_1_OC,   "",        1,      100000, 3600,   102 ) \
     PARAM_ENTRY(CAT_PWM,       Tim3_2_OC,   "",        1,      100000, 3600,   103 ) \
     PARAM_ENTRY(CAT_PWM,       Tim3_3_OC,   "",        1,      100000, 3600,   104 ) \
+    PARAM_ENTRY(CAT_CONTACT,   injectors,   "µl",      0,      65535,  40604,  125 ) \
     VALUE_ENTRY(version,       VERSTR,              2000 ) \
     VALUE_ENTRY(opmode,        OPMODES,             2002 ) \
     VALUE_ENTRY(chgtyp,        CHGTYPS,             2003 ) \
@@ -228,10 +229,11 @@
     VALUE_ENTRY(BMS_MaxOutput, "kW",                2100 ) \
     VALUE_ENTRY(BMS_MaxCharge, "W",                 2101 ) \
     VALUE_ENTRY(BMS_Isolation, "Ohm",               2102 ) \
-    VALUE_ENTRY(checksum4Counter, "",               2103 ) \
+    VALUE_ENTRY(USARTSRRXNE, "",                    2103 ) \
     VALUE_ENTRY(dmaTransferSize, "",                2104 ) \
     VALUE_ENTRY(dmaReceiveFlags, "",                2105 ) \
     VALUE_ENTRY(usart2Flags, "",                    2106 ) \
+
 //Next value Id: 2102
 
 
