@@ -411,7 +411,8 @@ void GS450HClass::CalcHTMChecksum(uint16_t len)
         if(VerifyMTHChecksum(100)==0 || dma_get_interrupt_flag(DMA1, DMA_CHANNEL6, DMA_TCIF)==0)
         {
             statusInv=0;
-                        //set speeds to 0 to prevent dynamic throttle/regen issues
+            //set speeds to 0 to prevent dynamic throttle/regen issues
+
             mg1_speed=0;
             mg2_speed=0;
             //disable cruise
@@ -527,7 +528,6 @@ void GS450HClass::CalcHTMChecksum(uint16_t len)
     case 8:
         if(VerifyMTHChecksum(120)==0 || dma_get_interrupt_flag(DMA1, DMA_CHANNEL6, DMA_TCIF)==0)
         {
-
             statusInv=0;
             //set speeds to 0 to prevent dynamic throttle/regen issues
             mg1_speed=0;

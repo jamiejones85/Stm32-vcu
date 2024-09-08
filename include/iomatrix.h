@@ -25,12 +25,12 @@
 
 class IOMatrix
 {
-   public:
+   public://order of these matters!
       enum pinfuncs
       {
          NONE, CHADEMOALLOW, OBCENABLE, HEATERENABLE, RUNINDICATION, WARNINDICATION,
          COOLANTPUMP, NEGCONTACTOR, BRAKELIGHT, REVERSELIGHT, HEATREQ, HVREQ,
-         DCFCREQUEST, BRAKEVACPUMP, DCDC_ENA, PWM_TIM3,
+         DCFCREQUEST, BRAKEVACPUMP, DCDC_ENA, PWM_TIM3, CP_SPOOF,
          LAST
       };
             //order of these matters!

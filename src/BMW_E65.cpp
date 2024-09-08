@@ -2,7 +2,6 @@
 #include "stm32_can.h"
 #include "params.h"
 
-
 uint8_t  Gcount; //gear display counter byte
 uint8_t shiftPos=0xe1; //contains byte to display gear position on dash.default to park
 uint8_t gear_BA=0x03; //set to park as initial condition
@@ -17,6 +16,7 @@ uint8_t BA5=0x4d;//0x0BA first counter byte(byte 5)
 uint8_t BA6=0x80;//0x0BA second counter byte(byte 6)
 uint8_t AA1=0x0F;
 uint8_t engineLights = 0;
+
 
 void BMW_E65::SetCanInterface(CanHardware* c)
 {
@@ -38,10 +38,6 @@ void BMW_E65::DecodeCAN(int id, uint32_t* data)
     {
     case 0x130:
         BMW_E65::handle130(data);
-        break;
-
-    case 0x192:
-        BMW_E65::handle192(data);
         break;
 
     case 0x480:
@@ -117,38 +113,6 @@ void BMW_E65::handle130(uint32_t data[2])
     }
 }
 
-void BMW_E65::handle192(uint32_t data[2])
-{
-    uint32_t GLeaver = data[0] & 0x00ffffff;  //unsigned int to contain result of message 0x192. Gear selector lever position
-
-    switch (GLeaver)
-    {
-    case 0x80506a:  //park button pressed
-        this->gear = PARK;
-        gear_BA = 0x03;
-        shiftPos = 0xe1;
-        break;
-    case 0x80042d: //R+ position
-        this->gear = REVERSE;
-        gear_BA = 0x02;
-        shiftPos = 0xd2;
-        break;
-    case 0x800374:  //D+ pressed
-        this->gear = DRIVE;
-        gear_BA = 0x08;
-        shiftPos = 0x78;
-        break;
-    case 0x80006a:  //not pressed
-    case 0x800147:  //R position
-    case 0x800259:  //D pressed
-    case 0x81006a:  //Left Back button pressed
-    case 0x82006a:  //Left Front button pressed
-    case 0x84006a:  //right Back button pressed
-    case 0x88006a:  //right Front button pressed
-    case 0xa0006a:  //  S-M-D button pressed
-        break;
-    }
-}
 
 void BMW_E65::handle480(uint32_t data[2])
 {
@@ -168,35 +132,6 @@ void BMW_E65::Task10Ms()
 {
     if(CANWake)
     {
-
-        uint8_t data[8];
-        int rpm = 0;
-
-        if (Ready())
-        {
-            data[1] = 0x50 | AA1;  //Counter for 0xAA Byte 0
-            data[2] = 0x07;
-            data[6] = 0x94;
-            data[7] = 0x00;
-            rpm =  MAX(750, revCounter) * 4; // rpm value for E65
-        } else {
-            data[1] = 0x30 | AA1;  //Counter for 0xAA Byte 0
-            data[2] = 0xFE;
-            data[6] = 0x84;
-            data[7] = 0x00;
-        }
-
-        data[3] = 0x00;  //Pedal position 0-255
-        data[4] = rpm;   //lowByte(RPM_A);
-        data[5] = rpm >> 8;  //highByte(RPM_A);
-
-        int16_t check_AA = (data[1] + data[2] + data[3] + data[4] + data[5] + data[6] + data[7] + 0xAA);
-        check_AA = (check_AA / 0x100) + (check_AA & 0xff);
-        check_AA = check_AA & 0xff;
-        data[0] = check_AA;  //checksum
-
-        can->Send(0x0AA, (uint32_t*)data, 8); //Send on CAN2
-
         SendAbsDscMessages(Param::GetBool(Param::din_brake));
     }
 }
@@ -229,33 +164,29 @@ void BMW_E65::Task200Ms()
 
     if(CANWake)
     {
-        if (isE90)
+        //update shitPos
+        int selectedDir = Param::GetInt(Param::dir);
+
+        if (selectedDir == 0)
         {
-            //update shitPos
-            int selectedDir = Param::GetInt(Param::dir);
-
-            if (selectedDir == 0)
-            {
-                //neutral/park
-                this->gear = PARK;
-                gear_BA = 0x03;
-                shiftPos = 0xe1;
-            }
-            else if (selectedDir == -1)
-            {
-                //reverse
-                this->gear = REVERSE;
-                gear_BA = 0x02;
-                shiftPos = 0xd2;
-            }
-            else if (selectedDir == 1)
-            {
-                //forward
-                this->gear = DRIVE;
-                gear_BA = 0x08;
-                shiftPos = 0x78;
-            }
-
+            //neutral/park
+            this->gear = PARK;
+            gear_BA = 0x03;
+            shiftPos = 0xe1;
+        }
+        else if (selectedDir == -1)
+        {
+            //reverse
+            this->gear = REVERSE;
+            gear_BA = 0x02;
+            shiftPos = 0xd2;
+        }
+        else if (selectedDir == 1)
+        {
+            //forward
+            this->gear = DRIVE;
+            gear_BA = 0x08;
+            shiftPos = 0x78;
         }
         uint8_t errorLightsParam = Param::GetInt(Param::errlights);
         if (engineLights != errorLightsParam) {
@@ -309,8 +240,40 @@ void BMW_E65::SendAbsDscMessages(bool Brake_In)
 {
 
 //////////send abs/dsc messages////////////////////////
-    uint8_t a8_brake;
     uint8_t bytes[8];
+
+    uint16_t RPM_A = 0;
+    if (Ready())
+    {
+        RPM_A = 750 * 4;
+        bytes[1] = 0x50 | AA1;  //Counter for 0xAA Byte 0
+        bytes[2] = 0x07;
+        bytes[6] = 0x94;
+        bytes[7] = 0x00;
+    }
+    else
+    {
+        bytes[1] = 0x30 | AA1;  //Counter for 0xAA Byte 0
+        bytes[2] = 0xFE;
+        bytes[6] = 0x84;
+        bytes[7] = 0x00;
+    }
+    bytes[3] = 0x00;             //Pedal position 0-255
+    bytes[4] = RPM_A & 0xff;   //lowByte(RPM_A);
+    bytes[5] = RPM_A>>8 & 0xff;;  //highByte(RPM_A);
+
+
+    ///Check sum math for 0x0AA///
+    int16_t check_AA = (bytes[1] + bytes[2] + bytes[3] + bytes[4] + bytes[5] + bytes[6] + bytes[7] + 0xAA);
+    check_AA = (check_AA / 0x100) + (check_AA & 0xff);
+    check_AA = check_AA & 0xff;
+    bytes[0] = check_AA;  //checksum
+
+    can->Send(0x0AA, bytes, 8); //Send on CAN
+
+
+    uint8_t a8_brake;
+
 
     if(Brake_In)
     {
@@ -335,7 +298,7 @@ void BMW_E65::SendAbsDscMessages(bool Brake_In)
     bytes[6]=0x0f;
     bytes[7]=a8_brake;  //brake off =0x04 , brake on = 0x64.
 
-    can->Send(0x0A8, bytes, 8); //Send on CAN2
+    can->Send(0x0A8, bytes, 8); //Send on CAN
 
     bytes[0]=A90; //first counter byte
     bytes[1]=A91; //second counter byte
@@ -346,7 +309,7 @@ void BMW_E65::SendAbsDscMessages(bool Brake_In)
     bytes[6]=0xe0;
     bytes[7]=0x21;
 
-    can->Send(0x0A9, bytes, 8); //Send on CAN2
+    can->Send(0x0A9, bytes, 8); //Send on CAN
 
     int16_t check_BA = (gear_BA+0xff+0x0f+BA6+0x0ba);
     check_BA = (check_BA / 0x100)+ (check_BA & 0xff);
@@ -365,6 +328,7 @@ void BMW_E65::SendAbsDscMessages(bool Brake_In)
 ////////////////////////////////////////
 ////here we increment the abs/dsc msg counters
 
+    AA1++;
     A80++;
     A81++;
     A90++;
@@ -374,6 +338,7 @@ void BMW_E65::SendAbsDscMessages(bool Brake_In)
     AA1++;
     if (BA5==0x5C) //reload initial condition
     {
+        AA1 = 0x0;  //0x0AA second counter byte
         A80=0xbe;//0x0A8 first counter byte
         A81=0x00;//0x0A8 second counter byte
         A90=0xe9;//0x0A9 first counter byte
@@ -424,9 +389,9 @@ void BMW_E65::Engine_Data()
     can->Send(0x1D0,bytes,8); //Send on CAN2
 
     if (C1D00 == C1D01)
-{
-    C1D00++;
-    if (C1D00 == 0x0F)
+    {
+        C1D00++;
+        if (C1D00 == 0x0F)
         {
             C1D00 = 0x00;
         }
@@ -440,12 +405,7 @@ void BMW_E65::Engine_Data()
 
 bool BMW_E65::GetGear(Vehicle::gear& outGear)
 {
-    if (isE90)
-    {
-        return false;
-    }
-    outGear = gear;    //send the shifter pos
-    return true; //Let caller know we set a valid gear
+    return false;
 }
 
 void BMW_E65::SetFuelGauge(float level) {

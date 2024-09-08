@@ -78,12 +78,15 @@
 #include "dcdc.h"
 #include "TeslaDCDC.h"
 #include "BMW_E31.h"
+#include "DigiPot.h"
 #include "shifter.h"
 #include "F30_Lever.h"
+#include "E65_Lever.h"
 #include "JLR_G1.h"
 #include "JLR_G2.h"
 #include "no_Lever.h"
 #include "CPC.h"
+#include "Focci.h"
 #include "NoInverter.h"
 #include "linbus.h"
 #include "VWheater.h"
@@ -91,7 +94,6 @@
 #include "rearoutlanderinverter.h"
 #include "NoVehicle.h"
 #include "kangoobms.h"
-#include "DigiPot.h"
 
 #define PRECHARGE_TIMEOUT 5  //5s
 
