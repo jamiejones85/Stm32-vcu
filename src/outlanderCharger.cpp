@@ -141,6 +141,11 @@ void outlanderCharger::DecodeCAN(int id, uint32_t data[2])
 void outlanderCharger::Task100Ms()
 {
     int opmode = Param::GetInt(Param::opmode);
+    if(opmode==MOD_OFF)
+    {
+        batteryVolts = 0;
+    }
+
     if(opmode==MOD_CHARGE)
     {
         setVolts=Param::GetInt(Param::Voltspnt)*10;

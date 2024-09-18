@@ -401,11 +401,11 @@ void GS450HClass::CalcHTMChecksum(uint16_t len)
         break;
     case 3:
 
-        transferSize = dma_get_number_of_data(DMA1, DMA_CHANNEL6);
-        Param::SetInt(Param::dmaTransferSize, transferSize);
+        // transferSize = dma_get_number_of_data(DMA1, DMA_CHANNEL6);
+        // Param::SetInt(Param::dmaTransferSize, transferSize);
 
-        Param::SetInt(Param::dmaReceiveFlags, (DMA_ISR(DMA1) & DMA_FLAGS << DMA_FLAG_OFFSET(DMA_CHANNEL6)) >> DMA_FLAG_OFFSET(DMA_CHANNEL6) );
-        Param::SetInt(Param::usart2Flags, USART_SR(USART2));
+        // Param::SetInt(Param::dmaReceiveFlags, (DMA_ISR(DMA1) & DMA_FLAGS << DMA_FLAG_OFFSET(DMA_CHANNEL6)) >> DMA_FLAG_OFFSET(DMA_CHANNEL6) );
+        // Param::SetInt(Param::usart2Flags, USART_SR(USART2));
 
 
         if(VerifyMTHChecksum(100)==0 || dma_get_interrupt_flag(DMA1, DMA_CHANNEL6, DMA_TCIF)==0)

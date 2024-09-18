@@ -122,7 +122,7 @@
     PARAM_ENTRY(CAT_IOPINS,    SL2Func,     PINFUNCS,  0,      13,     0,      84 ) \
     PARAM_ENTRY(CAT_IOPINS,    PWM1Func,    PINFUNCS,  0,      14,     0,      85 ) \
     PARAM_ENTRY(CAT_IOPINS,    PWM2Func,    PINFUNCS,  0,      14,     4,      86 ) \
-    PARAM_ENTRY(CAT_IOPINS,    PWM3Func,    PINFUNCS,  0,      15,     2,      87 ) \
+    PARAM_ENTRY(CAT_IOPINS,    PWM3Func,    PINFUNCS,  0,      16,     2,      87 ) \
     PARAM_ENTRY(CAT_IOPINS,    GP12VInFunc, PINFUNCS,  0,      13,     12,     98 ) \
     PARAM_ENTRY(CAT_IOPINS,    HVReqFunc,   PINFUNCS,  0,      13,     11,     99 ) \
     PARAM_ENTRY(CAT_IOPINS,    GPA1Func,    APINFUNCS, 0,      2,      0,      110 ) \
@@ -229,12 +229,9 @@
     VALUE_ENTRY(BMS_MaxOutput, "kW",                2100 ) \
     VALUE_ENTRY(BMS_MaxCharge, "W",                 2101 ) \
     VALUE_ENTRY(BMS_Isolation, "Ohm",               2102 ) \
-    VALUE_ENTRY(USARTSRRXNE, "",                    2103 ) \
-    VALUE_ENTRY(dmaTransferSize, "",                2104 ) \
-    VALUE_ENTRY(dmaReceiveFlags, "",                2105 ) \
-    VALUE_ENTRY(usart2Flags, "",                    2106 ) \
+    VALUE_ENTRY(VehLockSt,     ONOFF,               2103 ) \
 
-//Next value Id: 2102
+//Next value Id: 2104
 
 
 

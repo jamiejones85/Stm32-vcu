@@ -24,6 +24,7 @@ void BMW_E65::SetCanInterface(CanHardware* c)
 
     can->RegisterUserMessage(0x130);//E65 CAS
     can->RegisterUserMessage(0x192);//E65 Shifter
+    can->RegisterUserMessage(0x2FC);//E90 Enclosure status
     can->RegisterUserMessage(0x480);//Network Management
     can->RegisterUserMessage(0x1A0);//Speed
 
@@ -48,6 +49,9 @@ void BMW_E65::DecodeCAN(int id, uint32_t* data)
         BMW_E65::handle1A0(data);
         break;
 
+    case 0x2FC:
+        BMW_E65::handle2FC(data);
+        break;
 
     default:
         break;
@@ -113,6 +117,18 @@ void BMW_E65::handle130(uint32_t data[2])
     }
 }
 
+void BMW_E65::handle2FC(uint32_t data[2])
+{
+    uint8_t* bytes = (uint8_t*)data;
+    if (bytes[0] == 0x84)//Locked
+    {
+        Param::SetInt(Param::VehLockSt,1);
+    }
+    else if (bytes[0] == 0x81)//Unlocked
+    {
+       Param::SetInt(Param::VehLockSt,0);
+    }
+}
 
 void BMW_E65::handle480(uint32_t data[2])
 {
@@ -245,7 +261,8 @@ void BMW_E65::SendAbsDscMessages(bool Brake_In)
     uint16_t RPM_A = 0;
     if (Ready())
     {
-        RPM_A = 750 * 4;
+        //RPM_A = 750 * 4;
+        RPM_A = MAX(750, revCounter) * 4;
         bytes[1] = 0x50 | AA1;  //Counter for 0xAA Byte 0
         bytes[2] = 0x07;
         bytes[6] = 0x94;
@@ -359,7 +376,7 @@ void BMW_E65::Engine_Data()
     if (Param::GetInt(Param::opmode) == MOD_RUN)
     {
         EngRun = 0x60;
-        uint16_t injectors = Param::GetInt(Param::injectors);
+        uint16_t injectors = 40604;
         bytes[4] = injectors;
         bytes[5] = injectors >> 8;
     }
