@@ -55,8 +55,6 @@ public:
     static float idleThrotLim;
     static float regenRamp;
     static float throttleRamp;
-    static int bmslimhigh;
-    static int bmslimlow;
     static int accelmax;
     static int accelflt;
     static float udcmin;
