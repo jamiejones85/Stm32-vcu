@@ -923,10 +923,10 @@ void Param::Change(Param::PARAM_NUM paramNum)
     Throttle::throtmax = Param::GetFloat(Param::throtmax);
     Throttle::throtmin = Param::GetFloat(Param::throtmin);
     Throttle::throtdead = Param::GetFloat(Param::throtdead);
-    //Throttle::idcmin = Param::GetFloat(Param::idcmin); //Make them dynamic so code section can impact
-    //Throttle::idcmax = Param::GetFloat(Param::idcmax);
-    //Throttle::udcmin = Param::GetFloat(Param::udcmin);
-    //Throttle::udcmax = Param::GetFloat(Param::udclim);
+    Throttle::idcmin = Param::GetFloat(Param::idcmin);
+    Throttle::idcmax = Param::GetFloat(Param::idcmax);
+    Throttle::udcmin = Param::GetFloat(Param::udcmin);
+    Throttle::udcmax = Param::GetFloat(Param::udclim);
     Throttle::speedLimit = Param::GetInt(Param::revlim);
     Throttle::regenRamp = Param::GetFloat(Param::regenramp);
     Throttle::throttleRamp = Param::GetFloat(Param::throtramp);

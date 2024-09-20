@@ -44,16 +44,14 @@ float Throttle::throtmin;
 float Throttle::throtdead;
 float Throttle::regenRamp;
 float Throttle::throttleRamp;
+int Throttle::bmslimhigh;
+int Throttle::bmslimlow;
 float Throttle::udcmin;
 float Throttle::udcmax;
 float Throttle::idcmin;
 float Throttle::idcmax;
 int Throttle::speedLimit;
 float Throttle::ThrotRpmFilt;
-float UDCres;
-float IDCres;
-float UDCprevspnt;
-float IDCprevspnt;
 
 // internal variable, reused every time the function is called
 static float throttleRamped = 0.0;
@@ -178,7 +176,7 @@ float Throttle::CalcThrottle(int potval, int potIdx, bool brkpedal)
 
     if (brkpedal)
     {
-        if(speed < 100)
+        if(speed < 100 || speed < regenendRpm)
         {
             return 0;
         }
@@ -233,7 +231,7 @@ float Throttle::CalcThrottle(int potval, int potIdx, bool brkpedal)
 
 
     //Do clever bits for regen and such.
-    if(speed < 100 || speed <regenendRpm)//No regen under 100 rpm or speed under regenendRpm
+    if(speed < 100 || speed < regenendRpm)//No regen under 100 rpm
     {
         regenlim = 0;
     }
@@ -347,55 +345,22 @@ bool Throttle::TemperatureDerate(float temp, float tempMax, float& finalSpnt)
 
 void Throttle::UdcLimitCommand(float& finalSpnt, float udc)
 {
-    udcmin = Param::GetFloat(Param::udcmin);//Made dynamic
-    udcmax = Param::GetFloat(Param::udclim);
-
     if(udcmin>0)    //ignore if set to zero. useful for bench testing without isa shunt
     {
-        Param::SetFloat(Param::udcheater, finalSpnt);
-
         if (finalSpnt >= 0)
         {
-
             float udcErr = udc - udcmin;
-            UDCres = udcErr * 5;
-            UDCres = MAX(0, UDCres);
-
-            if(UDCprevspnt > UDCres) //if udc limit potnom spnt is lower ramp down to it
-            {
-                UDCprevspnt = RAMPDOWN(UDCprevspnt, UDCres, throttleRamp);
-            }
-            else if(UDCprevspnt < finalSpnt)//if out UDCprevspnt is under the final spnt increase this back up
-            {
-                UDCprevspnt = RAMPUP(UDCprevspnt, UDCres, throttleRamp);
-            }
-            else
-            {
-                UDCprevspnt = finalSpnt;
-            }
-            finalSpnt = UDCprevspnt;
+            float res = udcErr * 5;
+            res = MAX(0, res);
+            finalSpnt = MIN(finalSpnt, res);
         }
         else
         {
             float udcErr = udc - udcmax;
-            UDCres = udcErr * 3.5;
-            UDCres = MIN(0, UDCres);
-
-            if(UDCprevspnt < UDCres)
-            {
-                UDCprevspnt = RAMPUP(UDCprevspnt, UDCres, regenRamp);
-            }
-            else if(UDCprevspnt > finalSpnt)//if out UDCprevspnt is over the final spnt decrease to meet finalspnt
-            {
-                UDCprevspnt = RAMPDOWN(UDCprevspnt, UDCres, regenRamp);
-            }
-            else
-            {
-                UDCprevspnt = finalSpnt;
-            }
-            finalSpnt = UDCprevspnt;
+            float res = udcErr * 3.5;
+            res = MIN(0, res);
+            finalSpnt = MAX(finalSpnt, res);
         }
-        Param::SetFloat(Param::tmpheater, UDCprevspnt);
     }
     else
     {
@@ -406,59 +371,24 @@ void Throttle::UdcLimitCommand(float& finalSpnt, float udc)
 void Throttle::IdcLimitCommand(float& finalSpnt, float idc)
 {
     static float idcFiltered = 0;
+
     idcFiltered = IIRFILTERF(idcFiltered, idc, 4);
 
-    idcmax = Param::GetFloat(Param::idcmax);//Made dynamic
-    idcmin = Param::GetFloat(Param::idcmin);
-
-    if(idcmax>0)    //ignore if set to zero. useful for bench testing without isa shunt
+    if (finalSpnt >= 0)
     {
-        Param::SetFloat(Param::powerheater, finalSpnt);
-        if (finalSpnt >= 0)
-        {
-            float idcerr = idcmax - idcFiltered;
-            IDCres = idcerr * 1;//gain needs tuning
-            IDCres = MAX(0, IDCres);
+        float idcerr = idcmax - idcFiltered;
+        float res = idcerr * 10;
 
-            if(IDCprevspnt> IDCres)
-            {
-                IDCprevspnt = RAMPDOWN(IDCprevspnt, IDCres, throttleRamp);
-            }
-            else if(IDCprevspnt < finalSpnt)//if out UDCprevspnt is under the final spnt increase this back up
-            {
-                IDCprevspnt = RAMPUP(IDCprevspnt, IDCres, throttleRamp);
-            }
-            else
-            {
-                IDCprevspnt = finalSpnt;
-            }
-            finalSpnt = IDCprevspnt;
-        }
-        else
-        {
-
-            float idcerr = idcmin + idcFiltered;
-            IDCres = idcerr * 1;//gain needs tuning
-            IDCres = MIN(0, IDCres);
-
-            if(finalSpnt < IDCres)
-            {
-                IDCprevspnt = RAMPUP(IDCprevspnt, IDCres, regenRamp);
-            }
-            else if(IDCprevspnt > finalSpnt)//if out UDCprevspnt is over the final spnt decrease to meet finalspnt
-            {
-                IDCprevspnt = RAMPDOWN(IDCprevspnt, IDCres, regenRamp);
-            }
-            else
-            {
-                IDCprevspnt = finalSpnt;
-            }
-            finalSpnt = IDCprevspnt;
-        }
+        res = MAX(0, res);
+        finalSpnt = MIN(res, finalSpnt);
     }
     else
     {
-        finalSpnt = finalSpnt;
+        float idcerr = idcmin - idcFiltered;
+        float res = idcerr * 10;
+
+        res = MIN(0, res);
+        finalSpnt = MAX(res, finalSpnt);
     }
 }
 
