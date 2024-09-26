@@ -78,6 +78,7 @@ static NoInverterClass NoInverter;
 static OutlanderInverter outlanderInv;
 static noHeater Heaternone;
 static AmperaHeater amperaHeater;
+static OutlanderCanHeater outlanderCanHeater;
 static no_Lever NoGearLever;
 static F30_Lever F30GearLever;
 static E65_Lever E65GearLever;
@@ -103,6 +104,7 @@ static Can_OBD2 canOBD2;
 static Shifter shifterNone;
 static RearOutlanderInverter rearoutlanderInv;
 static LinBus* lin;
+static OutlanderHeartBeat outlanderHeartBeat;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 static void Ms200Task(void)
@@ -294,7 +296,21 @@ static void Ms100Task(void)
     selectedBMS->Task100Ms();
     selectedDCDC->Task100Ms();
     selectedShifter->Task100Ms();
+    selectedHeater->Task100Ms();
     canMap->SendAll();
+
+    if (Param::GetInt(Param::Inverter) == InvModes::Outlander || 
+        Param::GetInt(Param::Inverter) == InvModes::RearOutlander ||
+        Param::GetInt(Param::chargemodes) == ChargeModes::Out_lander ||
+        Param::GetInt(Param::Heater) == HeatType::OutlanderHeater) {
+
+        if (Param::GetInt(Param::chargemodes) == ChargeModes::Out_lander) {
+            outlanderHeartBeat.SetPullInEVSE(outChg.GetClearToStart());
+        }
+
+        outlanderHeartBeat.Task100Ms();
+
+    }
 
 
     if (Param::GetInt(Param::dir) < 0)
@@ -588,6 +604,7 @@ static void Ms1Task(void)
 static void UpdateInv()
 {
     selectedInverter->DeInit();
+    
     switch (Param::GetInt(Param::Inverter))
     {
     case InvModes::NoInv:
@@ -737,6 +754,9 @@ static void UpdateHeater()
     case HeatType::VW:
         selectedHeater = &heaterVW;
         heaterVW.SetLinInterface(lin);
+        break;
+    case HeatType::OutlanderHeater:
+        selectedHeater = &outlanderCanHeater;
     }
     //This will call SetCanFilters() via the Clear Callback
     canInterface[0]->ClearUserMessages();
@@ -840,6 +860,7 @@ static void SetCanFilters()
     CanHardware* bms_can = canInterface[Param::GetInt(Param::BMSCan)];
     CanHardware* obd2_can = canInterface[Param::GetInt(Param::OBD2Can)];
     CanHardware* dcdc_can = canInterface[Param::GetInt(Param::DCDCCan)];
+    CanHardware* heater_can = canInterface[Param::GetInt(Param::HeaterCan)];
 
     selectedInverter->SetCanInterface(inverter_can);
     selectedVehicle->SetCanInterface(vehicle_can);
@@ -849,6 +870,7 @@ static void SetCanFilters()
     selectedDCDC->SetCanInterface(dcdc_can);
     selectedShifter->SetCanInterface(vehicle_can);
     canOBD2.SetCanInterface(obd2_can);
+    selectedHeater->SetCanInterface(heater_can);
 
     if (Param::GetInt(Param::Type) == 0)  ISA::RegisterCanMessages(shunt_can);//select isa shunt
     if (Param::GetInt(Param::Type) == 1)  SBOX::RegisterCanMessages(shunt_can);//select bmw sbox
@@ -996,6 +1018,8 @@ static bool CanCallback(uint32_t id, uint32_t data[2], uint8_t dlc) //This is wh
         selectedBMS->DecodeCAN(id, (uint8_t*)data);
         selectedDCDC->DecodeCAN(id, (uint8_t*)data);
         selectedShifter->DecodeCAN(id,data);
+        selectedHeater->DecodeCAN(id, data);
+
         break;
     }
     return false;
