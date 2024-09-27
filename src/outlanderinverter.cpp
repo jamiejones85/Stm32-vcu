@@ -84,10 +84,10 @@ void OutlanderInverter::Task100Ms()
 
    can->Send(0x371, data, 8);
 
-   // data[0] = 0x39100000;
-   // data[1] = 0x100CFE8F;
+   data[0] = 0x39100000;
+   data[1] = 0x100CFE8F;
 
-   // can->Send(0x285, data, 8);
+   can->Send(0x285, data, 8);
 
    data[0] = 0x3D000000;
    data[1] = 0x00210000;

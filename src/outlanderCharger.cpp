@@ -152,19 +152,19 @@ void outlanderCharger::Task100Ms()
         actVolts=Param::GetInt(Param::udc);
 
         uint8_t bytes[8];
-        // bytes[0] = 0x00;
-        // bytes[1] = 0x00;
-        // bytes[2] = 0x00;
-        // bytes[3] = 0x00;
-        // bytes[4] = 0x00;
-        // bytes[5] = 0x00;
-        // bytes[6] = 0x00;
-        // bytes[7] = 0x00;
-        // if(clearToStart)
-        // {
-        //     bytes[2] = 0xB6;//oxb6 in byte 3 enables charger
-        //     can->Send(0x285, (uint32_t*)bytes, 8);
-        // }
+        bytes[0] = 0x00;
+        bytes[1] = 0x00;
+        bytes[2] = 0x00;
+        bytes[3] = 0x00;
+        bytes[4] = 0x00;
+        bytes[5] = 0x00;
+        bytes[6] = 0x00;
+        bytes[7] = 0x00;
+        if(clearToStart)
+        {
+            bytes[2] = 0xB6;//oxb6 in byte 3 enables charger
+            can->Send(0x285, (uint32_t*)bytes, 8);
+        }
 
 
         bytes[0] = setVolts >> 8;
@@ -237,8 +237,4 @@ void outlanderCharger::handle38A(uint32_t data[2])
 
 uint16_t outlanderCharger::GetBatteryVolts() {
    return batteryVolts;
-}
-
-bool outlanderCharger::GetClearToStart() {
-    return clearToStart;
 }

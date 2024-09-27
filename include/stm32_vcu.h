@@ -95,7 +95,6 @@
 #include "NoVehicle.h"
 #include "kangoobms.h"
 #include "OutlanderCanHeater.h"
-#include "OutlanderHeartBeat.h"
 
 #define PRECHARGE_TIMEOUT 5  //5s
 

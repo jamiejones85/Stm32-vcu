@@ -104,7 +104,7 @@ static Can_OBD2 canOBD2;
 static Shifter shifterNone;
 static RearOutlanderInverter rearoutlanderInv;
 static LinBus* lin;
-static OutlanderHeartBeat outlanderHeartBeat;
+// static OutlanderHeartBeat outlanderHeartBeat;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 static void Ms200Task(void)
@@ -304,11 +304,11 @@ static void Ms100Task(void)
         Param::GetInt(Param::chargemodes) == ChargeModes::Out_lander ||
         Param::GetInt(Param::Heater) == HeatType::OutlanderHeater) {
 
-        if (Param::GetInt(Param::chargemodes) == ChargeModes::Out_lander) {
-            outlanderHeartBeat.SetPullInEVSE(outChg.GetClearToStart());
-        }
+        // if (Param::GetInt(Param::chargemodes) == ChargeModes::Out_lander) {
+        //     outlanderHeartBeat.SetPullInEVSE(outChg.GetClearToStart());
+        // }
 
-        outlanderHeartBeat.Task100Ms();
+        // outlanderHeartBeat.Task100Ms();
 
     }
 

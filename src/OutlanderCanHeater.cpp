@@ -33,7 +33,19 @@ void OutlanderCanHeater::SetCanInterface(CanHardware* c)
 void OutlanderCanHeater::Task100Ms() {
 
    if (shouldHeat) {
+
       uint8_t bytes[8];
+      bytes[0] = 0x00;
+      bytes[1] = 0x00;
+      bytes[2] = 0x00;
+      bytes[3] = 0x21;
+      bytes[4] = 0x90;
+      bytes[5] = 0xFE;
+      bytes[6] = 0x0C;
+      bytes[7] = 0x10;
+
+      can->Send(0x285, (uint32_t*)bytes, 8);
+
       bytes[0] = 0x03;
       bytes[1] = 0x50;
       bytes[2] = 0x00;
@@ -53,6 +65,7 @@ void OutlanderCanHeater::Task100Ms() {
 
       can->Send(0x188, (uint32_t*)bytes, 8);
    }
+
 }
 
 void OutlanderCanHeater::SetTargetTemperature(float temp) {
