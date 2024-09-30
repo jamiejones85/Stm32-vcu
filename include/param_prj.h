@@ -231,6 +231,7 @@
     VALUE_ENTRY(BMS_MaxCharge, "W",                 2101 ) \
     VALUE_ENTRY(BMS_Isolation, "Ohm",               2102 ) \
     VALUE_ENTRY(VehLockSt,     ONOFF,               2103 ) \
+    VALUE_ENTRY(ContactorWelded,ONOFF,               2104 ) \
 
 //Next value Id: 2104
 

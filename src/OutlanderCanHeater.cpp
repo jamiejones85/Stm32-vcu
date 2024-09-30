@@ -37,7 +37,7 @@ void OutlanderCanHeater::Task100Ms() {
       uint8_t bytes[8];
       bytes[0] = 0x00;
       bytes[1] = 0x00;
-      bytes[2] = 0x00;
+      bytes[2] = 0xB6;
       bytes[3] = 0x21;
       bytes[4] = 0x90;
       bytes[5] = 0xFE;
@@ -58,9 +58,11 @@ void OutlanderCanHeater::Task100Ms() {
       if (currentTemperature < desiredTemperature - 5) {
          bytes[2] = 0xA2;
          Param::SetInt(Param::powerheater, 3000);
-      } else {
+      } else if (currentTemperature < desiredTemperature) {
          bytes[2] = 0x32;
          Param::SetInt(Param::powerheater, 1500);
+      } else {
+         Param::SetInt(Param::powerheater, 0);
       }
 
       can->Send(0x188, (uint32_t*)bytes, 8);

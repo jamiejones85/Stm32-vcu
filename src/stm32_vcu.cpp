@@ -504,6 +504,7 @@ static void Ms10Task(void)
                 opmode = MOD_PRECHARGE;//proceed to precharge if 1)throttle not pressed , 2)ign on , 3)start signal rx
                 vehicleStartTime = rtc_get_counter_val();
                 initbyStart=true;
+                Param::SetInt(Param::ContactorWelded, 0);
             }
         }
         if(chargeMode)
@@ -511,6 +512,7 @@ static void Ms10Task(void)
             opmode = MOD_PRECHARGE;//proceed to precharge if charge requested.
             vehicleStartTime = rtc_get_counter_val();
             initbyCharge=true;
+            Param::SetInt(Param::ContactorWelded, 0);
         }
         Param::SetInt(Param::opmode, opmode);
         rlyDly=25;//Recharge sequence timer
@@ -523,6 +525,9 @@ static void Ms10Task(void)
         }
         IOMatrix::GetPin(IOMatrix::NEGCONTACTOR)->Set();
         IOMatrix::GetPin(IOMatrix::COOLANTPUMP)->Set();
+        if (DigIo::prec_out.Get() == 0 && Param::GetInt(Param::udc) > 10) {
+            Param::SetInt(Param::ContactorWelded, 1);
+        }
         if(rlyDly!=0) rlyDly--;//here we are going to pause before energising precharge to prevent too many contactors pulling amps at the same time
         if(rlyDly==0) DigIo::prec_out.Set();//commence precharge
         if ((stt & (STAT_POTPRESSED | STAT_UDCBELOWUDCSW | STAT_UDCLIM)) == STAT_NONE)
