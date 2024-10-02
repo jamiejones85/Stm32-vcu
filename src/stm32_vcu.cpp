@@ -52,6 +52,7 @@ hours=0, minutes=0, seconds=0,
 alarm=0;			// != 0 when alarm is pending
 
 static uint8_t rlyDly=25;
+static uint8_t mainDly=25;
 
 // Instantiate Classes
 static BMW_E31 e31Vehicle;
@@ -516,6 +517,7 @@ static void Ms10Task(void)
         }
         Param::SetInt(Param::opmode, opmode);
         rlyDly=25;//Recharge sequence timer
+        mainDly=25;
         break;
 
     case MOD_PRECHARGE:
@@ -525,23 +527,28 @@ static void Ms10Task(void)
         }
         IOMatrix::GetPin(IOMatrix::NEGCONTACTOR)->Set();
         IOMatrix::GetPin(IOMatrix::COOLANTPUMP)->Set();
-        if (DigIo::prec_out.Get() == 0 && Param::GetInt(Param::udc) > 10) {
+        if (rlyDly!=0 && Param::GetInt(Param::udc) > 30) {
             Param::SetInt(Param::ContactorWelded, 1);
         }
         if(rlyDly!=0) rlyDly--;//here we are going to pause before energising precharge to prevent too many contactors pulling amps at the same time
         if(rlyDly==0) DigIo::prec_out.Set();//commence precharge
-        if ((stt & (STAT_POTPRESSED | STAT_UDCBELOWUDCSW | STAT_UDCLIM)) == STAT_NONE)
+        if(mainDly!=0 && rlyDly == 0) {//force a mimimum precharge time
+            mainDly--;
+        }
+        if ((stt & (STAT_POTPRESSED | STAT_UDCBELOWUDCSW | STAT_UDCLIM)) == STAT_NONE && mainDly == 0)
         {
             if(StartSig)
             {
                 opmode = MOD_RUN;
                 StartSig=false;//reset for next time
                 rlyDly=25;//Recharge sequence timer
+                mainDly=25;
             }
             else if(chargeMode)
             {
                 opmode = MOD_CHARGE;
                 rlyDly=25;//Recharge sequence timer
+                mainDly=200;
             }
 
         }

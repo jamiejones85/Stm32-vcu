@@ -54,6 +54,8 @@ void OutlanderCanHeater::Task100Ms() {
       bytes[5] = 0x00;
       bytes[6] = 0x00;
       bytes[7] = 0x00;
+      
+      currentTemperature = Param::GetInt(Param::tmpheater);
 
       if (currentTemperature < desiredTemperature - 5) {
          bytes[2] = 0xA2;
