@@ -9,6 +9,7 @@
 #include <libopencm3/stm32/timer.h>
 #include <libopencm3/stm32/rtc.h>
 #include "hwinit.h"
+#include "outlanderCharger.h"
 
 namespace utils
 {
@@ -273,6 +274,9 @@ float ProcessUdc(int motorSpeed)
         if(Param::GetInt(Param::opmode) == MOD_OFF)
         {
             udc = 0; //ensure we reset udc during off state to keep precharge working
+        } else {
+            Param::SetFloat(Param::udc, outlanderCharger::GetBatteryVolts());
+            udc = outlanderCharger::GetBatteryVolts();
         }
     }
     else if (Param::GetInt(Param::ShuntType) == 1)//ISA shunt

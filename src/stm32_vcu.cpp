@@ -438,7 +438,7 @@ static void Ms100Task(void)
         ACrequest=selectedChargeInt->ACRequest(RunChg);
     }
 
-    Param::SetInt(Param::HeatReq,IOMatrix::GetPin(IOMatrix::HEATREQ)->Get());
+    //Param::SetInt(Param::HeatReq,IOMatrix::GetPin(IOMatrix::HEATREQ)->Get());
 
     DigiPot::SetPot1Step(); //just for dev
     DigiPot::SetPot2Step(); //just for dev

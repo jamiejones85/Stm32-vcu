@@ -178,7 +178,7 @@ float Throttle::CalcThrottle(int potval, int potIdx, bool brkpedal)
 
     if (brkpedal)
     {
-        if(speed < 100 || speed < regenendRpm)
+        if(speed < 100 || speed < regenendRpm || Param::GetInt(Param::revRegen) == 0)
         {
             return 0;
         }

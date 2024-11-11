@@ -35,7 +35,7 @@ float   outlanderCharger::ACAmps;
 float   outlanderCharger::DCAmps;
 float   outlanderCharger::LV_Volts;
 float   outlanderCharger::LV_Amps;
-
+uint16_t outlanderCharger::batteryVolts;
 
 bool outlanderCharger::ControlCharge(bool RunCh, bool ACReq)
 {
@@ -210,6 +210,11 @@ void outlanderCharger::Task100Ms()
         }
 
     }
+
+    if(opmode==MOD_OFF)
+    {
+        batteryVolts = 0;
+    }
 }
 
 void outlanderCharger::handle377(uint32_t data[2])
@@ -230,6 +235,7 @@ void outlanderCharger::handle389(uint32_t data[2])
     ACVolts = bytes[1]; //AC voltage measured at charger. Scale 1 to 1.
     ACAmps = bytes[6] * 0.1; //Current in Amps from mains. scale 0.1.
     DCAmps = bytes[2] * 0.1; //Current in Amps from charger to battery. scale 0.1.
+    batteryVolts = bytes[0] * 2;
     Param::SetFloat(Param::AC_Volts, ACVolts);
     Param::SetFloat(Param::AC_Amps, ACAmps);
 }
@@ -246,4 +252,6 @@ void outlanderCharger::handle38A(uint32_t data[2])
     Param::SetFloat(Param::ChgTemp, MAX(temp_1, temp_2));
 }
 
-
+uint16_t outlanderCharger::GetBatteryVolts() {
+   return batteryVolts;
+}
