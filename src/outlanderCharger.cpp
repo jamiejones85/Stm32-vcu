@@ -239,6 +239,8 @@ void outlanderCharger::handle389(uint32_t data[2])
     if (Param::GetInt(Param::ShuntType) == 0 && Param::GetInt(Param::Inverter)!= 1)//Only populate if no shunt is used and not using Leaf inverter !!!look to clean up
     {
         Param::SetFloat(Param::udc, batteryVolts);
+        Param::SetFloat(Param::udc3, batteryVolts); //just for development don't merge
+
     }
 }
 

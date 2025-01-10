@@ -476,6 +476,15 @@ static void Ms100Task(void)
     {
         IOMatrix::GetPin(IOMatrix::HVACTIVE)->Clear();//HV Active Off
     }
+
+    if (opmode == MOD_OFF) {
+        uint8_t testNegativeContactor = Param::GetInt(Param::TestNegCONT);
+        if (testNegativeContactor == 1) {
+            IOMatrix::GetPin(IOMatrix::NEGCONTACTOR)->Set();
+            Param::SetInt(Param::TestNegCONT, false);
+            rlyDly = 5000;
+        }
+    }
 }
 
 static void ControlCabHeater(int opmode)
