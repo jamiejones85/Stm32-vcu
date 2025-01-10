@@ -102,7 +102,6 @@
 #include "kangoobms.h"
 #include "OutlanderCanHeater.h"
 #include "OutlanderHeartBeat.h"
-#include "Preheater.h"
 
 #define PRECHARGE_TIMEOUT 5  //5s
 
@@ -123,19 +122,26 @@ static CanMap* canMap;
 static ChargeModes targetCharger;
 static ChargeInterfaces targetChgint;
 static uint8_t ChgSet;
+static uint8_t HeatSet;
+
 static bool RunChg;
+static bool RunPreHeat;
+
 static uint8_t ChgHrs_tmp;
 static uint8_t ChgMins_tmp;
 static uint16_t ChgDur_tmp;
 static uint32_t ChgTicks=0,ChgTicks_1Min=0;
+static uint32_t PreheatTicks=0,PreheatTicks_1Min=0;
+static uint8_t PreHeatHrs_tmp;
+static uint8_t PreHeatMins_tmp;
+static uint16_t PreHeatDur_tmp;
+
 static bool StartSig=false;
 static bool ACrequest=false;
 static bool initbyStart=false;
 static bool initbyCharge=false;
+static bool initbyPreHeat=false;
 static bool OutlanderCAN=false;
-
-
-
 
 static volatile unsigned
 days=0,
@@ -198,7 +204,6 @@ static Can_OBD2 canOBD2;
 static Shifter shifterNone;
 static RearOutlanderInverter rearoutlanderInv;
 static LinBus* lin;
-static Preheater preheater;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 static void Ms200Task(void)
@@ -242,6 +247,26 @@ static void Ms200Task(void)
             {
                 ChgTicks_1Min=0;
                 ChgDur_tmp--; //countdown minutes of charge time remaining.
+            }
+        }
+
+        if (opmode==MOD_PREHEAT) {
+            if(PreheatTicks!=0)
+            {
+                PreheatTicks--; //decrement charge timer ticks
+                PreheatTicks_1Min++;
+            }
+
+            if(PreheatTicks==0)
+            {
+                RunPreHeat=false; //end preheat
+                PreheatTicks = (GetInt(Param::Pre_Dur)*300);//recharge the tick timer
+            }
+
+            if (PreheatTicks_1Min==300)
+            {
+                PreheatTicks_1Min=0;
+                PreHeatDur_tmp--; //countdown minutes of charge time remaining.
             }
         }
 
@@ -358,8 +383,42 @@ static void Ms200Task(void)
     {
         IOMatrix::GetPin(IOMatrix::BRAKEVACPUMP)->Clear();
     }
+    
+    if(HeatSet==2)  //preheating
+    {
+        if(opmode!=MOD_PREHEAT)
+        {
+            if((PreHeatHrs_tmp==hours)&&(PreHeatMins_tmp==minutes)&&(PreHeatDur_tmp!=0)) {
+                RunPreHeat = true;//if we arrive at set preheat time and duration is non zero then initiate preheat
+            }
+            else {
+                RunPreHeat = false;
+            } 
+        }
 
-    preheater.Task200Ms(opmode, hours, minutes);
+        if(opmode==MOD_PREHEAT)
+        {
+            if(PreheatTicks!=0)
+            {
+                PreheatTicks--; //decrement charge timer ticks
+                PreheatTicks_1Min++;
+            }
+
+            if(PreheatTicks==0)
+            {
+                RunPreHeat=false; //end preheat once timer expires.
+                PreheatTicks = (GetInt(Param::Pre_Dur)*300);//recharge the tick timer
+            }
+
+            if (PreheatTicks_1Min==300)
+            {
+                PreheatTicks_1Min=0;
+                PreHeatDur_tmp--; //countdown minutes of charge time remaining.
+            }
+        }
+
+    }
+
 
 }
 
@@ -474,7 +533,7 @@ static void Ms100Task(void)
     }
 
     //HV Active output
-    if(opmode==MOD_CHARGE || opmode==MOD_RUN)
+    if(opmode==MOD_CHARGE || opmode==MOD_RUN || MOD_PREHEAT == opmode)
     {
         IOMatrix::GetPin(IOMatrix::HVACTIVE)->Set();//HV Active On
     }
@@ -495,9 +554,13 @@ static void Ms100Task(void)
 
 static void ControlCabHeater(int opmode)
 {
-    //Only run heater in run mode if enabled or timer set, also run is mode is preheat
-    //What about charge mode?
-    if ((opmode == MOD_RUN && Param::GetInt(Param::Control) >= 1) || opmode == MOD_PREHEAT)
+    Param::SetInt(Param::RunPreHeat, opmode);
+    Param::SetInt(Param::RunPreHeatTest, (opmode == MOD_RUN && Param::GetInt(Param::Control) >= 1) || opmode == MOD_PRECHARGE);
+
+    //Only run heater in run mode
+    //What about charge mode and timer mode?
+    // Param::GetInt(Param::Control) 1 is enable 2 is timer, but we still want to be able to request heat in drive mode
+    if ((opmode == MOD_RUN && Param::GetInt(Param::Control) >= 1) || opmode == MOD_PRECHARGE)
     {
         IOMatrix::GetPin(IOMatrix::HEATERENABLE)->Set();//Heater enable and coolant pump on
         selectedHeater->SetTargetTemperature(50); //TODO: Currently does nothing
@@ -609,8 +672,7 @@ static void Ms10Task(void)
     case MOD_OFF:
         initbyStart=false;
         initbyCharge=false;
-        preheater.SetInitByPreHeat(false);
-        
+        initbyPreHeat=false;
         DigIo::inv_out.Clear();//inverter power off
         IOMatrix::GetPin(IOMatrix::COOLANTPUMP)->Clear();//Coolant pump off if used
         Param::SetInt(Param::dir, 0); // shift to park/neutral on shutdown regardless of shifter pos
@@ -643,11 +705,11 @@ static void Ms10Task(void)
             vehicleStartTime = rtc_get_counter_val();
             initbyCharge=true;
         }
-        if (preheater.GetRunPreHeat()) {
+        if (RunPreHeat) {
             opmode = MOD_PRECHARGE;//proceed to precharge if charge requested.
             rlyDly=25;//Recharge sequence timer
             vehicleStartTime = rtc_get_counter_val();
-            preheater.SetInitByPreHeat(true);
+            initbyPreHeat=true;
         }
         Param::SetInt(Param::opmode, opmode);
         break;
@@ -680,13 +742,16 @@ static void Ms10Task(void)
                 opmode = MOD_CHARGE;
                 rlyDly=25;//Recharge sequence timer
                 Param::SetInt(Param::TorqDerate,0);//clear torque derate reason
+            } else if (RunPreHeat) {
+                opmode = MOD_PREHEAT;
+                rlyDly=25;//Recharge sequence timer
+                Param::SetInt(Param::TorqDerate,0);//clear torque derate reason
             }
 
         }
         if(initbyCharge && !chargeMode) opmode = MOD_OFF;// These two statements catch a precharge hang from either start mode or run mode.
         if(initbyStart && !selectedVehicle->Ready()) opmode = MOD_OFF;
-        if(!preheater.GetInitByPreHeat() && !preheater.GetRunPreHeat()) opmode = MOD_OFF;
-
+        if(initbyPreHeat && !RunPreHeat) opmode = MOD_OFF;
         if (udc < (Param::GetInt(Param::udcsw)) && rtc_get_counter_val() > (vehicleStartTime + PRECHARGE_TIMEOUT))
         {
             DigIo::prec_out.Clear();
@@ -741,16 +806,18 @@ static void Ms10Task(void)
         {
             DigIo::dcsw_out.Set();
         }
-
-        preheater.Ms10Task();
-
-        if(!preheater.GetRunPreHeat())
+        Param::SetInt(Param::opmode, MOD_PREHEAT);
+        Param::SetInt(Param::HeatReq, true);
+        ErrorMessage::UnpostAll();
+        if(!RunPreHeat)
         {
+            Param::SetInt(Param::opmode, MOD_OFF);
+            Param::SetInt(Param::HeatReq, false);
+
             rlyDly=1000;//Recharge sequence timer for delayed shutdown
         }
         break;
     }
-
 
     ControlCabHeater(opmode);
     if (Param::GetInt(Param::ShuntType) == 2)  SBOX::ControlContactors(opmode,canInterface[Param::GetInt(Param::ShuntCan)]);//BMW contactor box
@@ -1165,10 +1232,15 @@ void Param::Change(Param::PARAM_NUM paramNum)
     }
     ChgSet = Param::GetInt(Param::Chgctrl);//0=enable,1=disable,2=timer.
     ChgTicks = (GetInt(Param::Chg_Dur)*300);//number of 200ms ticks that equates to charge timer in minutes
+
+    PreHeatHrs_tmp=GetInt(Param::Pre_Hrs);
+    PreHeatMins_tmp=GetInt(Param::Pre_Min);
+    HeatSet = Param::GetInt(Param::Control);//0=disable,1=enable,2=timer. Heater control
+    PreheatTicks = (GetInt(Param::Pre_Dur)*300);//number of 200ms ticks that equates to preheat timer in minutes
+    PreHeatDur_tmp = GetInt(Param::Pre_Dur);
+
     IOMatrix::AssignFromParams();
     IOMatrix::AssignFromParamsAnalogue();
-
-    preheater.ParamsChange();
 }
 
 

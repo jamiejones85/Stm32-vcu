@@ -18,7 +18,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#define VER 2.21.AA
+#define VER 2.21.AB
 
 
 /* Entries must be ordered as follows:
@@ -327,6 +327,7 @@ enum modes
     MOD_PRECHARGE,
     MOD_PCHFAIL,
     MOD_CHARGE,
+    MOD_PREHEAT,
     MOD_LAST
 };
 

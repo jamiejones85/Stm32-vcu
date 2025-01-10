@@ -66,7 +66,7 @@ void OutlanderHeartBeat::Task100Ms()
             bytes[2] = 0xB6;//oxb6 in byte 3 enables charger
         }
     }
-    else if (MOD_RUN == opmode)
+    else if (MOD_RUN == opmode || MOD_PREHEAT == opmode)
     {
 
         bytes[2] = 0x14;
@@ -77,7 +77,7 @@ void OutlanderHeartBeat::Task100Ms()
         bytes[7] = 0x10;
     }
 
-    if (MOD_CHARGE == opmode || MOD_RUN == opmode)
+    if (MOD_CHARGE == opmode || MOD_RUN == opmode || MOD_PREHEAT == opmode)
     {
         can1->Send(0x285, (uint32_t*)bytes, 8);
 
