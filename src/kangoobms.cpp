@@ -68,9 +68,9 @@ void KangooBMS::DecodeCAN(int id, uint8_t *data)
       current = rawCurrent;
 
       float rawVoltage = (float) ((data[6] << 8) + data[7]) / 2;
-      if(rawVoltage < 450 && rawVoltage > 200) {
+      //if(rawVoltage < 450 && rawVoltage > 200) {
          batteryVoltage = rawVoltage;
-      } 
+      //} 
 
       maxChargeAllowed = data[0] * 300;
 

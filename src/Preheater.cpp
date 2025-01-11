@@ -26,7 +26,7 @@ void Preheater::Ms10Task() {
     Param::SetInt(Param::opmode, MOD_PREHEAT);
     Param::SetInt(Param::HeatReq, true);
     ErrorMessage::UnpostAll();
-    if(!RunPreHeat)
+    if(!Preheater::RunPreHeat)
     {
         Param::SetInt(Param::opmode, MOD_OFF);
         Param::SetInt(Param::HeatReq, false);
@@ -37,6 +37,7 @@ void Preheater::Task200Ms(int opmode, unsigned hours, unsigned minutes)
 {
     if(Preheater::PreHeatSet == 2)  //0 - Disabled, 1 - Enabled, 2 - Preheat timer
     {
+        Param::SetInt(Param::PreheatDebug1, PreheatTicks);
         if(opmode!=MOD_PREHEAT)
         {
             if((PreHeatHrs_tmp==hours)&&(PreHeatMins_tmp==minutes)&&(PreHeatDur_tmp!=0)) {

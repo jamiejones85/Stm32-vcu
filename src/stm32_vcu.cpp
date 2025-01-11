@@ -474,7 +474,7 @@ static void Ms100Task(void)
     }
 
     //HV Active output
-    if(opmode==MOD_CHARGE || opmode==MOD_RUN)
+    if(opmode==MOD_CHARGE || opmode==MOD_RUN || opmode== MOD_PREHEAT)
     {
         IOMatrix::GetPin(IOMatrix::HVACTIVE)->Set();//HV Active On
     }
@@ -497,6 +497,7 @@ static void ControlCabHeater(int opmode)
 {
     //Only run heater in run mode if enabled or timer set, also run is mode is preheat
     //What about charge mode?
+    Param::SetInt(Param::PreheatDebug1, opmode);
     if ((opmode == MOD_RUN && Param::GetInt(Param::Control) >= 1) || opmode == MOD_PREHEAT)
     {
         IOMatrix::GetPin(IOMatrix::HEATERENABLE)->Set();//Heater enable and coolant pump on
@@ -678,6 +679,10 @@ static void Ms10Task(void)
             else if(chargeMode)
             {
                 opmode = MOD_CHARGE;
+                rlyDly=25;//Recharge sequence timer
+                Param::SetInt(Param::TorqDerate,0);//clear torque derate reason
+            } else if (preheater.GetRunPreHeat()) {
+                opmode = MOD_PREHEAT;
                 rlyDly=25;//Recharge sequence timer
                 Param::SetInt(Param::TorqDerate,0);//clear torque derate reason
             }
