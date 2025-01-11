@@ -23,6 +23,7 @@ namespace utils
     void displayThrottle();
     void ProcessCruiseControlButtons();
     void CpSpoofOutput();
+    void PreheatPWM();
     void SpeedoSet(uint16_t speed);
     void SpeedoStart();
     void GS450hOilPump(uint16_t pumpdc);

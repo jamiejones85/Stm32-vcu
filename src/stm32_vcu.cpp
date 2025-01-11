@@ -497,7 +497,6 @@ static void ControlCabHeater(int opmode)
 {
     //Only run heater in run mode if enabled or timer set, also run is mode is preheat
     //What about charge mode?
-    Param::SetInt(Param::PreheatDebug1, opmode);
     if ((opmode == MOD_RUN && Param::GetInt(Param::Control) >= 1) || opmode == MOD_PREHEAT)
     {
         IOMatrix::GetPin(IOMatrix::HEATERENABLE)->Set();//Heater enable and coolant pump on
@@ -690,7 +689,7 @@ static void Ms10Task(void)
         }
         if(initbyCharge && !chargeMode) opmode = MOD_OFF;// These two statements catch a precharge hang from either start mode or run mode.
         if(initbyStart && !selectedVehicle->Ready()) opmode = MOD_OFF;
-        if(!preheater.GetInitByPreHeat() && !preheater.GetRunPreHeat()) opmode = MOD_OFF;
+        if(preheater.GetInitByPreHeat() && !preheater.GetRunPreHeat()) opmode = MOD_OFF;
 
         if (udc < (Param::GetInt(Param::udcsw)) && rtc_get_counter_val() > (vehicleStartTime + PRECHARGE_TIMEOUT))
         {
@@ -1112,6 +1111,7 @@ void Param::Change(Param::PARAM_NUM paramNum)
     case Param::CP_PWM:
         //timer_set_oc_value(TIM3, TIM_OC3, (Param::GetInt(Param::CP_PWM)*66)-16);//No duty set here
         break;
+        
     default:
         break;
     }

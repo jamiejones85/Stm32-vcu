@@ -269,6 +269,11 @@ void tim3_setup()
                       GPIO_CNF_OUTPUT_ALTFN_PUSHPULL,GPIO0);	// GPIOB0=TIM3.CH3
         GS450hOil = 1; //Running GS450h Oil Pump
     }
+    else if (Param::GetInt(Param::PWM3Func) == IOMatrix::PREHEATPWM)
+    {
+        gpio_set_mode(GPIOB,GPIO_MODE_OUTPUT_2_MHZ,	// Low speed (only need 1khz)
+                      GPIO_CNF_OUTPUT_ALTFN_PUSHPULL,GPIO0);	// GPIOB0=TIM3.CH3
+    }
     else
     {
         DigIo::PWM3.Configure(GPIOB,GPIO0,PinMode::OUTPUT);
@@ -292,6 +297,11 @@ void tim3_setup()
                       GPIO_CNF_OUTPUT_ALTFN_PUSHPULL,GPIO7);	// GPIOE9=TIM3.CH2
         GS450hOil = 1; //Running GS450h Oil Pump
     }
+    else if (Param::GetInt(Param::PWM2Func) == IOMatrix::PREHEATPWM)
+    {
+        gpio_set_mode(GPIOA,GPIO_MODE_OUTPUT_2_MHZ,	// Low speed (only need 1khz)
+                      GPIO_CNF_OUTPUT_ALTFN_PUSHPULL,GPIO7);	// GPIOE9=TIM3.CH2
+    }
     else
     {
         DigIo::PWM2.Configure(GPIOA,GPIO7,PinMode::OUTPUT);
@@ -314,6 +324,11 @@ void tim3_setup()
         gpio_set_mode(GPIOA,GPIO_MODE_OUTPUT_2_MHZ,	// Low speed (only need 1khz)
                       GPIO_CNF_OUTPUT_ALTFN_PUSHPULL,GPIO6);	// GPIOA6=TIM3.CH1
         GS450hOil = 1; //Running GS450h Oil Pump
+    }
+    else if (Param::GetInt(Param::PWM2Func) == IOMatrix::PREHEATPWM)
+    {
+        gpio_set_mode(GPIOA,GPIO_MODE_OUTPUT_2_MHZ,	// Low speed (only need 1khz)
+                      GPIO_CNF_OUTPUT_ALTFN_PUSHPULL,GPIO6);	// GPIOA6=TIM3.CH1
     }
     else
     {

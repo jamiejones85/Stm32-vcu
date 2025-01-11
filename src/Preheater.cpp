@@ -1,6 +1,7 @@
 #include "Preheater.h"
 #include "errormessage.h"
 #include "digio.h"
+#include "utils.h"
 
 Preheater::Preheater()
 {
@@ -37,7 +38,6 @@ void Preheater::Task200Ms(int opmode, unsigned hours, unsigned minutes)
 {
     if(Preheater::PreHeatSet == 2)  //0 - Disabled, 1 - Enabled, 2 - Preheat timer
     {
-        Param::SetInt(Param::PreheatDebug1, PreheatTicks);
         if(opmode!=MOD_PREHEAT)
         {
             if((PreHeatHrs_tmp==hours)&&(PreHeatMins_tmp==minutes)&&(PreHeatDur_tmp!=0)) {
@@ -50,6 +50,7 @@ void Preheater::Task200Ms(int opmode, unsigned hours, unsigned minutes)
 
         if(opmode==MOD_PREHEAT)
         {
+            utils::PreheatPWM();
             if(PreheatTicks!=0)
             {
                 PreheatTicks--; //decrement charge timer ticks
