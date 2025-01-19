@@ -528,21 +528,33 @@ void ProcessCruiseControlButtons()
     }
 }
 
-void PreheatPWM()
+void PreheatPWM(bool run)
 {
     uint16_t pwmVal = (Param::GetInt(Param::PREHEAT_PWM)*66)-16;
 
     if(Param::GetInt(Param::PWM1Func) == IOMatrix::PREHEATPWM)
     {
-        timer_set_oc_value(TIM3, TIM_OC1,pwmVal);
+        if (run) {
+            timer_set_oc_value(TIM3, TIM_OC1,pwmVal);
+        } else {
+            timer_set_oc_value(TIM3, TIM_OC1, 0);
+        }
     }
     if(Param::GetInt(Param::PWM2Func) == IOMatrix::PREHEATPWM)
     {
-        timer_set_oc_value(TIM3, TIM_OC2,pwmVal);
+        if (run) {
+            timer_set_oc_value(TIM3, TIM_OC2,pwmVal);
+        } else {
+            timer_set_oc_value(TIM3, TIM_OC2, 0);
+        }
     }
     if(Param::GetInt(Param::PWM3Func) == IOMatrix::PREHEATPWM)
     {
-        timer_set_oc_value(TIM3, TIM_OC3,pwmVal);
+        if (run) {
+            timer_set_oc_value(TIM3, TIM_OC3,pwmVal);
+        } else {
+            timer_set_oc_value(TIM3, TIM_OC3, 0);
+        }
     }
 }
 

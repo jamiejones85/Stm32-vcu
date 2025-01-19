@@ -67,11 +67,13 @@ void Preheater::Task200Ms(int opmode, unsigned hours, unsigned minutes)
             else {
                 RunPreHeat = false;
             } 
+            utils::PreheatPWM(false);
+
         }
 
         if(opmode==MOD_PREHEAT)
         {
-            utils::PreheatPWM();
+            utils::PreheatPWM(true);
             if(PreheatTicks!=0)
             {
                 PreheatTicks--; //decrement charge timer ticks

@@ -359,8 +359,8 @@ static void Ms200Task(void)
         IOMatrix::GetPin(IOMatrix::BRAKEVACPUMP)->Clear();
     }
 
-    preheater.Task200Ms(opmode, hours, minutes);
-
+    //preheater.Task200Ms(opmode, hours, minutes);
+    utils::PreheatPWM(true);
 }
 
 static void Ms100Task(void)
