@@ -23,6 +23,7 @@
 #include "errormessage.h"
 #include "digio.h"
 #include "utils.h"
+#include "iomatrix.h"
 
 Preheater::Preheater()
 {
@@ -67,14 +68,12 @@ void Preheater::Task200Ms(int opmode, unsigned hours, unsigned minutes)
             else {
                 RunPreHeat = false;
             } 
-            utils::PreheatPWM(false);
-
+            IOMatrix::GetPin(IOMatrix::PREHEATOUT)->Clear();
         }
 
         if(opmode==MOD_PREHEAT)
         {
-            utils::PreheatPWM(true);
-            if(PreheatTicks!=0)
+             if(PreheatTicks!=0)
             {
                 PreheatTicks--; //decrement charge timer ticks
                 PreheatTicks_1Min++;
@@ -91,8 +90,12 @@ void Preheater::Task200Ms(int opmode, unsigned hours, unsigned minutes)
                 PreheatTicks_1Min=0;
                 PreHeatDur_tmp--; //countdown minutes of charge time remaining.
             }
+            IOMatrix::GetPin(IOMatrix::PREHEATOUT)->Set();
+
         }
 
+    } else {
+        IOMatrix::GetPin(IOMatrix::PREHEATOUT)->Clear();
     }
 
 }

@@ -573,7 +573,7 @@ static void ControlCabHeater(int opmode)
     }
 }
 
-static void Ms10Task(void)
+static void (void)
 {
     static uint32_t vehicleStartTime = 0;
 

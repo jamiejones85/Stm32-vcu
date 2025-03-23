@@ -359,8 +359,7 @@ static void Ms200Task(void)
         IOMatrix::GetPin(IOMatrix::BRAKEVACPUMP)->Clear();
     }
 
-    //preheater.Task200Ms(opmode, hours, minutes);
-    utils::PreheatPWM(true);
+   preheater.Task200Ms(opmode, hours, minutes);
 }
 
 static void Ms100Task(void)
@@ -1260,6 +1259,7 @@ extern "C" void rtc_isr(void)
 extern "C" int main(void)
 {
     extern const TERM_CMD TermCmds[];
+
 
     clock_setup();
     rtc_setup();

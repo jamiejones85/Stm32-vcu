@@ -528,36 +528,6 @@ void ProcessCruiseControlButtons()
     }
 }
 
-void PreheatPWM(bool run)
-{
-    uint16_t pwmVal = (Param::GetInt(Param::PREHEAT_PWM)*66)-16;
-
-    if(Param::GetInt(Param::PWM1Func) == IOMatrix::PREHEATPWM)
-    {
-        if (run) {
-            timer_set_oc_value(TIM3, TIM_OC1,pwmVal);
-        } else {
-            timer_set_oc_value(TIM3, TIM_OC1, 0);
-        }
-    }
-    if(Param::GetInt(Param::PWM2Func) == IOMatrix::PREHEATPWM)
-    {
-        if (run) {
-            timer_set_oc_value(TIM3, TIM_OC2,pwmVal);
-        } else {
-            timer_set_oc_value(TIM3, TIM_OC2, 0);
-        }
-    }
-    if(Param::GetInt(Param::PWM3Func) == IOMatrix::PREHEATPWM)
-    {
-        if (run) {
-            timer_set_oc_value(TIM3, TIM_OC3,pwmVal);
-        } else {
-            timer_set_oc_value(TIM3, TIM_OC3, 0);
-        }
-    }
-}
-
 void CpSpoofOutput()
 {
     uint16_t CpVal = 0;
@@ -568,7 +538,9 @@ void CpSpoofOutput()
         Param::SetInt(Param::CP_PWM,CpVal);
         CpVal = (Param::GetInt(Param::CP_PWM)*66)-16;
     }
-
+    
+    CpVal = (Param::GetInt(Param::CP_PWM)*66)-16;
+    
     if(Param::GetInt(Param::PWM1Func) == IOMatrix::CP_SPOOF)
     {
         timer_set_oc_value(TIM3, TIM_OC1,CpVal);//No duty set here

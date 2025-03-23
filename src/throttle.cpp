@@ -437,8 +437,10 @@ void Throttle::IdcLimitCommand(float& finalSpnt, float idc)
         Param::SetFloat(Param::powerheater, finalSpnt);
         if (finalSpnt >= 0)
         {
+            //450 - 450 = 0 
+            //450 - 480 = - 30
             float idcerr = idcmax - idcFiltered;
-            IDCres = idcerr * 1;//gain needs tuning
+            IDCres = idcerr * Param::GetFloat(Param::derateGain);
             IDCres = MAX(0, IDCres);
 
             if(IDCprevspnt> IDCres)
