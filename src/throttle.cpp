@@ -22,6 +22,7 @@
 #include "my_math.h"
 
 #define POT_SLACK 200
+using namespace std;
 
 int Throttle::potmin[2];
 int Throttle::potmax[2];
@@ -180,6 +181,10 @@ float Throttle::CalcThrottle(int potval, int potIdx, bool brkpedal)
     {
         if(speed < 100 || speed < regenendRpm)
         {
+            //creep
+            if(speed < regenendRpm && potnom == 0 ){
+                return Param::GetFloat(Param::creepthrot);
+            }
             return 0;
         }
         else if (speed < regenRpm)
@@ -256,6 +261,11 @@ float Throttle::CalcThrottle(int potval, int potIdx, bool brkpedal)
         //change limits to uint32, multiply by 10 then 0.1 to add a decimal to remove the hard edges
         potnom = utils::change(potnom,0,100,regenlim*10,throtmax*10);
         potnom *= 0.1;
+
+        //creep
+        if(speed < regenendRpm && potnom == 0 ){
+            potnom = Param::GetFloat(Param::creepthrot);
+        }
     }
     else //Reverse, as neutral already exited function
     {
@@ -371,7 +381,6 @@ void Throttle::UdcLimitCommand(float& finalSpnt, float udc)
 
         if (finalSpnt >= 0)
         {
-
             float udcErr = udc - udcmin;
             UDCres = udcErr * 5;
             UDCres = MAX(0, UDCres);
@@ -422,6 +431,7 @@ void Throttle::UdcLimitCommand(float& finalSpnt, float udc)
     }
 }
 
+//100, -460
 void Throttle::IdcLimitCommand(float& finalSpnt, float idc)
 {
     static float idcFiltered = 0;
@@ -435,46 +445,44 @@ void Throttle::IdcLimitCommand(float& finalSpnt, float idc)
     if(idcmax>0)    //ignore if set to zero. useful for bench testing without isa shunt
     {
         Param::SetFloat(Param::powerheater, finalSpnt);
-        if (finalSpnt >= 0)
+        if (finalSpnt >= 0)//pulling power, thus requesting troque
         {
-            //450 - 450 = 0 
-            //450 - 480 = - 30
-            float idcerr = idcmax - idcFiltered;
-            IDCres = idcerr * Param::GetFloat(Param::derateGain);
-            IDCres = MAX(0, IDCres);
-
-            if(IDCprevspnt> IDCres)
+            float idcerr = idcmin - idcFiltered; //How much are we exceeding current limit (note exceeding is positive)
+            IDCres = idcerr * 1;//gain needs tuning
+            IDCres = MAX(0, IDCres);//Throttle reduction request in %, positive value
+            Param::SetFloat(Param::IDCError, idcerr);
+            if(IDCprevspnt > (finalSpnt-IDCres))//is the previous limited setpoint over the target
             {
-                IDCprevspnt = RAMPDOWN(IDCprevspnt, IDCres, throttleRamp);
+                IDCprevspnt = RAMPDOWN(IDCprevspnt, (finalSpnt-IDCres), throttleRamp);//Rampdown IDCprevspnt by throttle ramp to desired setpoint
                 DerateReason |= 8;
                 Param::SetInt(Param::TorqDerate,DerateReason);
             }
-            else if(IDCprevspnt < finalSpnt)//if out UDCprevspnt is under the final spnt increase this back up
+            else if(IDCprevspnt < (finalSpnt-IDCres))//if out IDCprevspnt is under the final spnt increase this back up, only when Target is not lower then IDCprevspnt
             {
-                IDCprevspnt = RAMPUP(IDCprevspnt, IDCres, throttleRamp);
+                IDCprevspnt = RAMPUP(IDCprevspnt, finalSpnt, throttleRamp);//ramp up at throttleramp limit
             }
-            else
+            else//If IDCprevspnt is larger then finalspnt or lower then (finalSpnt-IDCres)
             {
                 IDCprevspnt = finalSpnt;
             }
-            finalSpnt = IDCprevspnt;
+            finalSpnt = IDCprevspnt; //always set finalsetpnt
         }
-        else
+        else//pushing power into battery thus pulling torque aka Regen
         {
 
-            float idcerr = idcmin + idcFiltered;
+            float idcerr = idcmax - idcFiltered;//are we over target, negative is overshoot
             IDCres = idcerr * 1;//gain needs tuning
-            IDCres = MIN(0, IDCres);
+            IDCres = MIN(0, IDCres);//only care about negatives, thus reductions
 
-            if(finalSpnt < IDCres)
+            if(finalSpnt < (finalSpnt-IDCres))//Only reduce if we are looking to limit, thus larger then finalspnt, NOTE all values are negative
             {
-                IDCprevspnt = RAMPUP(IDCprevspnt, IDCres, regenRamp);
+                IDCprevspnt = RAMPUP(IDCprevspnt, (finalSpnt-IDCres), regenRamp);//all values negative, ramp up to target
                 DerateReason |= 4;
                 Param::SetInt(Param::TorqDerate,DerateReason);
             }
-            else if(IDCprevspnt > finalSpnt)//if out UDCprevspnt is over the final spnt decrease to meet finalspnt
+            else if(IDCprevspnt > (finalSpnt-IDCres))//if out IDCprevspnt is over the final spnt decrease to meet finalspnt
             {
-                IDCprevspnt = RAMPDOWN(IDCprevspnt, IDCres, regenRamp);
+                IDCprevspnt = RAMPDOWN(IDCprevspnt, finalSpnt, regenRamp);
             }
             else
             {
