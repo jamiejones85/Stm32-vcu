@@ -181,10 +181,6 @@ float Throttle::CalcThrottle(int potval, int potIdx, bool brkpedal)
     {
         if(speed < 100 || speed < regenendRpm)
         {
-            //creep
-            if(speed < regenendRpm && potnom == 0 ){
-                return Param::GetFloat(Param::creepthrot);
-            }
             return 0;
         }
         else if (speed < regenRpm)
@@ -261,10 +257,8 @@ float Throttle::CalcThrottle(int potval, int potIdx, bool brkpedal)
         //change limits to uint32, multiply by 10 then 0.1 to add a decimal to remove the hard edges
         potnom = utils::change(potnom,0,100,regenlim*10,throtmax*10);
         potnom *= 0.1;
-
-        //creep
-        if(speed < regenendRpm && potnom == 0 ){
-            potnom = Param::GetFloat(Param::creepthrot);
+        if (potnom > 0 && potnom < Param::GetFloat(Param::minthrot)) {
+            potnom = 0;
         }
     }
     else //Reverse, as neutral already exited function
@@ -275,6 +269,10 @@ float Throttle::CalcThrottle(int potval, int potIdx, bool brkpedal)
         }
         potnom = utils::change(potnom,0,100,regenlim*10,throtmaxRev*10);
         potnom *= 0.1;
+
+        if (potnom > 0 && potnom < Param::GetFloat(Param::minthrot)) {
+            potnom = 0;
+        }
     }
 
     LastPedalPos = PedalPos; //Save current pedal position for next loop.
@@ -447,7 +445,7 @@ void Throttle::IdcLimitCommand(float& finalSpnt, float idc)
         Param::SetFloat(Param::powerheater, finalSpnt);
         if (finalSpnt >= 0)//pulling power, thus requesting troque
         {
-            float idcerr = idcmin - idcFiltered; //How much are we exceeding current limit (note exceeding is positive)
+            float idcerr = idcmin + idcFiltered; //How much are we exceeding current limit (note exceeding is positive)
             IDCres = idcerr * 1;//gain needs tuning
             IDCres = MAX(0, IDCres);//Throttle reduction request in %, positive value
             Param::SetFloat(Param::IDCError, idcerr);

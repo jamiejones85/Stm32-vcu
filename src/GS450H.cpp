@@ -166,6 +166,10 @@ void GS450HClass::SetTorque(float torquePercent)
                 mg1_torque = utils::change(torquePercent,50,100,0,4375);
             }
         }
+
+        Param::SetInt(Param::mg1Req, mg1_torque);
+        Param::SetInt(Param::mg2Req, mg2_torque);
+
     }
     else if(DriveType == PRIUS)
     {
@@ -455,18 +459,23 @@ void GS450HClass::Task1Ms()
             mg2_speed=0;
             //disable cruise
             Param::SetInt(Param::cruisespeed, 0);
+            Param::SetInt(Param::errlights, 8);
+
         }
         else
         {
             //exchange data and prepare next HTM frame
-            dma_clear_interrupt_flags(DMA1, DMA_CHANNEL6, DMA_TCIF);
             statusInv=1;
             dc_bus_voltage=(((mth_data[82]|mth_data[83]<<8)-5)/2);
             temp_inv_water=int8_t(mth_data[42]);
             temp_inv_inductor=int8_t(mth_data[86]);
             mg1_speed=mth_data[6]|mth_data[7]<<8;
             mg2_speed=mth_data[31]|mth_data[32]<<8;
+            Param::SetInt(Param::errlights, 0);
+
         }
+
+        dma_clear_interrupt_flags(DMA1, DMA_CHANNEL6, DMA_TCIF);
 
         mth_data[98]=0;
         mth_data[99]=0;
@@ -813,7 +822,7 @@ static void dma_write(const uint8_t *data, int size)
     dma_enable_memory_increment_mode(DMA1, DMA_CHANNEL7);
     dma_set_peripheral_size(DMA1, DMA_CHANNEL7, DMA_CCR_PSIZE_8BIT);
     dma_set_memory_size(DMA1, DMA_CHANNEL7, DMA_CCR_MSIZE_8BIT);
-    dma_set_priority(DMA1, DMA_CHANNEL7, DMA_CCR_PL_MEDIUM);
+    dma_set_priority(DMA1, DMA_CHANNEL7, DMA_CCR_PL_VERY_HIGH);
 
     dma_enable_channel(DMA1, DMA_CHANNEL7);
 
@@ -836,7 +845,7 @@ static void dma_read(uint8_t *data, int size)
     dma_enable_memory_increment_mode(DMA1, DMA_CHANNEL6);
     dma_set_peripheral_size(DMA1, DMA_CHANNEL6, DMA_CCR_PSIZE_8BIT);
     dma_set_memory_size(DMA1, DMA_CHANNEL6, DMA_CCR_MSIZE_8BIT);
-    dma_set_priority(DMA1, DMA_CHANNEL6, DMA_CCR_PL_LOW);
+    dma_set_priority(DMA1, DMA_CHANNEL6, DMA_CCR_PL_VERY_HIGH);
 
     dma_enable_channel(DMA1, DMA_CHANNEL6);
 

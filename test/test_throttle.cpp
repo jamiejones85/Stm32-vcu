@@ -41,7 +41,9 @@ static void TestSetup()
    Throttle::potmin[0] = 100;
    Throttle::potmax[0] = 4000;
    Throttle::throtmax = 100;
+   Throttle::throttleRamp = 10;
    Param::SetInt(Param::dir, 1);
+   Param::SetFloat(Param::idcmin, -100);
 }
 
 // TEMPERATURE DERATING
@@ -107,6 +109,70 @@ static void TestCalcThrottleIs100WhenOverMax() {
    ASSERT(throtVal ==  100);
 }
 
+static void TestIdcLimitCommandWhenUnderIDCMin() {
+   float throttleSpnt = 100;
+
+   //run through a good chunk of loops to populate the filtered idc
+   for (int i = 0; i < 50; i++) {
+      Throttle::IdcLimitCommand(throttleSpnt, -99);
+      throttleSpnt = 100;
+   }
+   Throttle::IdcLimitCommand(throttleSpnt, -99);
+
+   ASSERT(throttleSpnt == 100);
+}
+
+static void TestIdcLimitCommandWhenOverIDCMin() {
+   float throttleSpnt = 100;
+
+   for (int i = 0; i < 50; i++) {
+      Throttle::IdcLimitCommand(throttleSpnt, -120);
+      throttleSpnt = 100;
+   }
+
+   Throttle::IdcLimitCommand(throttleSpnt, -120);
+
+   ASSERT(throttleSpnt < 82);
+}
+
+static void TestIdcLimitCommandWhenOverIDCMinIncreasedWhenCurrentReduces() {
+   float throttleSpnt = 100;
+
+   for (int i = 0; i < 50; i++) {
+      Throttle::IdcLimitCommand(throttleSpnt, -120);
+      throttleSpnt = 100;
+   }
+
+   Throttle::IdcLimitCommand(throttleSpnt, -120);
+
+   ASSERT(throttleSpnt < 82);
+
+   for (int i = 0; i < 50; i++) {
+      Throttle::IdcLimitCommand(throttleSpnt, -90);
+      throttleSpnt = 100;
+   }
+
+   Throttle::IdcLimitCommand(throttleSpnt, -90);
+
+   ASSERT(throttleSpnt == 100);
+}
+
+static void sweep() {
+   float throttleSpnt = 100;
+
+   for (int i = 0; i > -150; i--) {
+      Throttle::IdcLimitCommand(throttleSpnt, i);
+      cout << "IDC: " << i << " throttleSpnt: " << throttleSpnt << endl;
+      throttleSpnt = 100;
+   }
+   for (int i = -150; i < 0; i++) {
+      Throttle::IdcLimitCommand(throttleSpnt, i);
+      cout << "IDC: " << i << " throttleSpnt: " << throttleSpnt << endl;
+      throttleSpnt = 100;
+   }
+}
+
+
 
 void ThrottleTest::RunTest()
 {
@@ -121,4 +187,9 @@ void ThrottleTest::RunTest()
    TestCalcThrottleIsAbove0WhenJustOutOfDeadZone();
    TestCalcThrottleIs100WhenMax();
    TestCalcThrottleIs100WhenOverMax();
+   TestIdcLimitCommandWhenUnderIDCMin();
+   TestIdcLimitCommandWhenOverIDCMin();
+   TestIdcLimitCommandWhenOverIDCMinIncreasedWhenCurrentReduces();
+   sweep();
+
 }

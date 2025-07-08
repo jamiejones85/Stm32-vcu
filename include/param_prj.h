@@ -18,7 +18,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#define VER 2.21.AC
+#define VER 2.21.ACDC
 
 
 /* Entries must be ordered as follows:
@@ -26,11 +26,12 @@
    2. Temporary parameters (id = 0)
    3. Display values
  */
-//Next param id (increase when adding new parameter!): 146
+//Next param id (increase when adding new parameter!): 149
 /*              category     name         unit       min     max     default id */
 #define PARAM_LIST \
     PARAM_ENTRY(CAT_SETUP,     Inverter,     INVMODES, 0,      8,      0,      5  ) \
     PARAM_ENTRY(CAT_SETUP,     Vehicle,      VEHMODES, 0,      8,      0,      6  ) \
+    PARAM_ENTRY(CAT_SETUP,     Compressor,   COMPRESSMODES, 0, 1,      0,      148  ) \
     PARAM_ENTRY(CAT_SETUP,     GearLvr,      SHIFTERS, 0,      4,      0,      108 ) \
     PARAM_ENTRY(CAT_SETUP,     Transmission, TRNMODES, 0,      1,      0,      78 ) \
     PARAM_ENTRY(CAT_SETUP,     interface,    CHGINT,    0,     4,      0,      39 ) \
@@ -48,6 +49,7 @@
     PARAM_ENTRY(CAT_SETUP,     DCDCCan,      CAN_DEV,  0,      1,      1,      107 ) \
     PARAM_ENTRY(CAT_SETUP,     HeaterCan,    CAN_DEV,  0,      1,      1,      138 ) \
     PARAM_ENTRY(CAT_SETUP,     MotActive,    MotorsAct,0,      3,      0,      129 ) \
+    PARAM_ENTRY(CAT_SETUP,     CompressorCan,CAN_DEV,  0,      1,      0,      147 ) \
     PARAM_ENTRY(CAT_THROTTLE,  potmin,      "dig",     0,      4095,   0,      7  ) \
     PARAM_ENTRY(CAT_THROTTLE,  potmax,      "dig",     0,      4095,   4095,   8  ) \
     PARAM_ENTRY(CAT_THROTTLE,  pot2min,     "dig",     0,      4095,   4095,   9  ) \
@@ -77,6 +79,7 @@
     PARAM_ENTRY(CAT_THROTTLE,  RegenBrakeLight,   "%",    -100,     0,     -15,      128 ) \
     PARAM_ENTRY(CAT_THROTTLE,  throtrpmfilt,   "rpm/10ms",  0.1,    200,    15,    131 ) \
     PARAM_ENTRY(CAT_THROTTLE,  derateGain,   "",  0.1,    2,    1,    145 ) \
+    PARAM_ENTRY(CAT_THROTTLE,  minthrot,  "%",  0,      15,      0,      146 ) \
     PARAM_ENTRY(CAT_LEXUS,     Gear,        LOWHIGH,   0,      3,      0,      27 ) \
     PARAM_ENTRY(CAT_LEXUS,     OilPump,     "%",       0,      100,    50,     28 ) \
     PARAM_ENTRY(CAT_CRUISE,    cruisestep,  "rpm",     1,      1000,   200,    29 ) \
@@ -110,6 +113,7 @@
     PARAM_ENTRY(CAT_HEATER,    Control,     HTCTRL,    0,      2,      0,      58 ) \
     PARAM_ENTRY(CAT_HEATER,    HeatPwr,     "W",       0,      6500,   0,      59 ) \
     PARAM_ENTRY(CAT_HEATER,    HeatPercnt,  "%",       0,      100,    0,      124 ) \
+    PARAM_ENTRY(CAT_AIRCON,    AirConCtrl,  ONOFF,     0,      1,      0,      149) \
     PARAM_ENTRY(CAT_CLOCK,     Set_Day,     DOW,       0,      6,      0,      46 ) \
     PARAM_ENTRY(CAT_CLOCK,     Set_Hour,    "Hours",   0,      23,     0,      47 ) \
     PARAM_ENTRY(CAT_CLOCK,     Set_Min,     "Mins",    0,      59,     0,      48 ) \
@@ -244,8 +248,13 @@
     VALUE_ENTRY(udcheater,     "V",                 2097 ) \
     VALUE_ENTRY(powerheater,   "W",                 2098 ) \
     VALUE_ENTRY(VehLockSt,     ONOFF,               2100 ) \
+    VALUE_ENTRY(IDCError,      "",                  2107 ) \
+    VALUE_ENTRY(compressStat,  COMP_STAT,           2108 ) \
+    VALUE_ENTRY(compressRPM,   "",                  2109 ) \
+    VALUE_ENTRY(mg1Req,   "",                       2110 ) \
+    VALUE_ENTRY(mg2Req,   "",                       2111 ) \
 
-//Next value Id: 2104
+//Next value Id: 2109
 
 //Dead params
 /*
@@ -267,6 +276,7 @@
 #define BTNSWITCH    "0=Button, 1=Switch, 2=CAN"
 #define DIRMODES     "0=Button, 1=Switch, 2=ButtonReversed, 3=SwitchReversed, 4=DefaultForward"
 #define INVMODES     "0=None, 1=Leaf_Gen1, 2=GS450H, 3=UserCAN, 4=OpenI, 5=Prius_Gen3, 6=Outlander, 7=GS300H, 8=RearOutlander"
+#define COMPRESSMODES "0=None, 1=Outlander"
 #define PLTMODES     "0=Absent, 1=ACStd, 2=ACchg, 3=Error, 4=CCS_Not_Rdy, 5=CCS_Rdy, 6=Static"
 #define VEHMODES     "0=BMW_E46, 1=BMW_E6x+, 2=Classic, 3=None, 5=BMW_E39, 6=VAG, 7=Subaru, 8=BMW_E31"
 #define BMSMODES     "0=Off, 1=SimpBMS, 2=TiDaisychainSingle, 3=TiDaisychainDual, 4=LeafBms, 5=RenaultKangoo33"
@@ -297,6 +307,7 @@
 #define CAT_THROTTLE "Throttle"
 #define CAT_POWER    "Power Limit"
 #define CAT_CONTACT  "Contactor Control"
+#define CAT_AIRCON   "Air Conditioning"
 #define CAT_TEST     "Testing"
 #define CAT_COMM     "Communication"
 #define CAT_SETUP    "General Setup"
@@ -313,6 +324,7 @@
 #define MotorsAct    "0=Mg1and2, 1=Mg1, 2=Mg2, 3=BlendingMG2and1"
 #define PumpOutType  "0=GS450hOil, 1=TachoOut"
 #define LIMITREASON  "0=None, 1=UDClimLow, 2=UDClimHigh, 4=IDClimLow, 8=IDClimHigh, 16=TempLim"
+#define COMP_STAT    "0=NoHv, 1=HvPresent, 2=NoHeartBeat, 3=Start"
 
 #define CAN_PERIOD_100MS    0
 #define CAN_PERIOD_10MS     1
@@ -433,6 +445,12 @@ enum Gear
     LOW = 0,
     HIGH = 1,
     AUTO = 2
+};
+
+enum CompressorOptions 
+{
+    NoCompress = 0,
+    OutlanderCompress = 1
 };
 
 enum vehicles
