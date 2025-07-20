@@ -26,12 +26,13 @@
    2. Temporary parameters (id = 0)
    3. Display values
  */
-//Next param id (increase when adding new parameter!): 149
+//Next param id (increase when adding new parameter!): 151
 /*              category     name         unit       min     max     default id */
 #define PARAM_LIST \
     PARAM_ENTRY(CAT_SETUP,     Inverter,     INVMODES, 0,      8,      0,      5  ) \
     PARAM_ENTRY(CAT_SETUP,     Vehicle,      VEHMODES, 0,      8,      0,      6  ) \
     PARAM_ENTRY(CAT_SETUP,     Compressor,   COMPRESSMODES, 0, 1,      0,      148  ) \
+    PARAM_ENTRY(CAT_SETUP,     CompTargetRPM,"rpm",         0, 8000,   0,      150  ) \
     PARAM_ENTRY(CAT_SETUP,     GearLvr,      SHIFTERS, 0,      4,      0,      108 ) \
     PARAM_ENTRY(CAT_SETUP,     Transmission, TRNMODES, 0,      1,      0,      78 ) \
     PARAM_ENTRY(CAT_SETUP,     interface,    CHGINT,    0,     4,      0,      39 ) \
@@ -251,10 +252,12 @@
     VALUE_ENTRY(IDCError,      "",                  2107 ) \
     VALUE_ENTRY(compressStat,  COMP_STAT,           2108 ) \
     VALUE_ENTRY(compressRPM,   "",                  2109 ) \
-    VALUE_ENTRY(mg1Req,   "",                       2110 ) \
-    VALUE_ENTRY(mg2Req,   "",                       2111 ) \
+    VALUE_ENTRY(mg1Req,        "",                  2110 ) \
+    VALUE_ENTRY(mg2Req,        "",                  2111 ) \
+    VALUE_ENTRY(fanSpeedReq,   "",                  2112 ) \
+    VALUE_ENTRY(compTargetTorq,"",                  2113 ) \
 
-//Next value Id: 2109
+//Next value Id: 2114
 
 //Dead params
 /*

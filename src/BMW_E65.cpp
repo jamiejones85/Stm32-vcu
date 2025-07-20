@@ -26,6 +26,8 @@ void BMW_E65::SetCanInterface(CanHardware* c)
     can->RegisterUserMessage(0x2FC);//E90 Enclosure status
     can->RegisterUserMessage(0x480);//Network Management
     can->RegisterUserMessage(0x1A0);//Speed
+    can->RegisterUserMessage(0x1B5);//HeatFlow_LoadTorqueClimate
+
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////Handle incomming pt can messages from the car here
@@ -51,9 +53,25 @@ void BMW_E65::DecodeCAN(int id, uint32_t* data)
         BMW_E65::handle480(data);
         break;
 
+    case 0x1B5:
+        BMW_E65::handle1B5(data);
+        break;
+
     default:
         break;
     }
+}
+
+void BMW_E65::handle1B5(uint32_t data[2])
+{
+    uint8_t* bytes = (uint8_t*)data;
+
+    uint8_t requestedFanSpeed = bytes[3] & 0x0F;
+    float compressorTorqueTarget = (bytes[2] * 0.5);
+
+    Param::SetInt(Param::fanSpeedReq, requestedFanSpeed);
+    Param::SetFloat(Param::compTargetTorq, compressorTorqueTarget);
+
 }
 
 void BMW_E65::handle130(uint32_t data[2])

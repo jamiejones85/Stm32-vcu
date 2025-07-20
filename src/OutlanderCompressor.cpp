@@ -51,7 +51,8 @@ void OutlanderCompressor::Task100Ms()
    bytes[7] = 0x03;
 
    uint8_t airConCtrl = Param::GetInt(Param::AirConCtrl);
-
+   uint16_t compressorTargetRpm = Param::GetInt(Param::CompTargetRPM);
+   
    if (airConCtrl == 1) {
       bytes[0] = 0x0B;
 
