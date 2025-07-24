@@ -29,6 +29,7 @@ public:
    virtual void Task10Ms() {} //Default does nothing
    virtual void Task100Ms() {} //Default does nothing
    virtual void Task200Ms() {} //Default does nothing
+   virtual void Off() {} //Default does nothing
    virtual void DecodeCAN(int, uint32_t*) {};
    virtual bool ControlCharge(bool, bool) {return false;};
    virtual void DeInit() {} //called when switching to another charger, similar to a destructor

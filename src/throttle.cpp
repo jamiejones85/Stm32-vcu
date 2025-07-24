@@ -143,6 +143,7 @@ float Throttle::NormalizeThrottle(int potval, int potIdx)
 float Throttle::CalcThrottle(int potval, int potIdx, bool brkpedal)
 {
     int speed = Param::GetInt(Param::speed);
+    int rawSpeed = speed;
     int dir = Param::GetInt(Param::dir);
     float potnom = 0.0f;  // normalize potval against the potmin and potmax values
 

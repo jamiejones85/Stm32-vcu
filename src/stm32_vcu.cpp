@@ -106,6 +106,7 @@
 #include "compressor.h"
 #include "NoCompressor.h"
 #include "OutlanderCompressor.h"
+#include "MGgen2V2Lcharger.h"
 
 #define PRECHARGE_TIMEOUT 5  //5s
 
@@ -205,6 +206,7 @@ static Preheater preheater;
 static NoCompressor CompressorNone;
 static OutlanderCompressor outlanderCompressor;
 static Compressor* selectedCompressor = &CompressorNone;
+static MGgen2V2Lcharger MGgen2v2l;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 static void Ms200Task(void)
@@ -627,7 +629,10 @@ static void Ms10Task(void)
         selectedVehicle->DashOff();
         StartSig=false;//reset for next time
 
-        if(rlyDly!=0) rlyDly--;//here we are going to pause to allow system shut down before opening HV contactors
+        if(rlyDly!=0) {
+            rlyDly--;//here we are going to pause to allow system shut down before opening HV contactors
+            selectedCharger->Off(); // send message to charger to shut down
+        }
         if(rlyDly==0)
         {
             DigIo::dcsw_out.Clear();
@@ -888,7 +893,9 @@ static void UpdateCharger()
     case ChargeModes::Elcon:
         selectedCharger = &ChargerElcon;
         break;
-
+    case ChargeModes::MGgen2:
+        selectedCharger = &MGgen2v2l;
+        break;
     }
     //This will call SetCanFilters() via the Clear Callback
     canInterface[0]->ClearUserMessages();
