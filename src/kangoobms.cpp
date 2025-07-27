@@ -136,7 +136,13 @@ void KangooBMS::Task100Ms() {
    Param::SetInt(Param::BMS_MaxInput, maxInput);
    Param::SetInt(Param::BMS_MaxOutput, maxOutput);
    Param::SetInt(Param::BMS_Isolation, isolationResistance);
-   Param::SetInt(Param::BMS_ChargeLim, MaxChargeCurrent());
+   
+   //for testing higher CCS charge rates allow ingoring of BMS_ChargeLim and revert to using the CCS_ILim param do not merge
+   if (Param::GetInt(Param::BMS_IngnoreMaxRate)) {
+      Param::SetInt(Param::BMS_ChargeLim, 999);
+   } else {
+      Param::SetInt(Param::BMS_ChargeLim, MaxChargeCurrent());
+   }
 
    //On the Kangoo charging is positive current, discharge is negative
    if (BMSDataValid()) {

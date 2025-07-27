@@ -27,7 +27,7 @@
    2. Temporary parameters (id = 0)
    3. Display values
  */
-//Next param id (increase when adding new parameter!): 153
+//Next param id (increase when adding new parameter!): 157
 /*              category     name         unit       min     max     default id */
 #define PARAM_LIST \
     PARAM_ENTRY(CAT_SETUP,     Inverter,     INVMODES, 0,      8,      0,      5  ) \
@@ -108,6 +108,7 @@
     PARAM_ENTRY(CAT_BMS,       BMS_VmaxLimit, "V",     0,      10,     4.2,    93 ) \
     PARAM_ENTRY(CAT_BMS,       BMS_TminLimit, "°C",    -100,   100,    5,      94 ) \
     PARAM_ENTRY(CAT_BMS,       BMS_TmaxLimit, "°C",    -100,   100,    50,     95 ) \
+    PARAM_ENTRY(CAT_BMS,       BMS_IngnoreMaxRate, ONOFF,0,      1,      0,    156 ) \
     PARAM_ENTRY(CAT_HEATER,    Heater,      HTTYPE,    0,      5,      0,      57 ) \
     PARAM_ENTRY(CAT_HEATER,    Control,     HTCTRL,    0,      2,      0,      58 ) \
     PARAM_ENTRY(CAT_HEATER,    HeatPwr,     "W",       0,      6500,   0,      59 ) \
@@ -115,8 +116,9 @@
     PARAM_ENTRY(CAT_HEATER,    HeatPotDir, ABOVEBELOW, 0,      4,      0,      150 ) \
     PARAM_ENTRY(CAT_HEATER,    HeatPotOn,   "dig",     0,      4095,   0,      151 ) \
     PARAM_ENTRY(CAT_HEATER,    HeatPotFull, "dig",     0,      4095,   0,      152 ) \
-    PARAM_ENTRY(CAT_AIRCON,     Compressor, COMPRESSMODES, 0, 1,      0,      153  ) \
+    PARAM_ENTRY(CAT_AIRCON,    Compressor,  COMPRESSMODES, 0, 1,       0,      153  ) \
     PARAM_ENTRY(CAT_AIRCON,    AirConCtrl,  ONOFF,     0,      1,      0,      154) \
+    PARAM_ENTRY(CAT_SETUP,     CompTargetRPM,"rpm",         0, 8000,   0,      155  ) \
     PARAM_ENTRY(CAT_CLOCK,     Set_Day,     DOW,       0,      6,      0,      46 ) \
     PARAM_ENTRY(CAT_CLOCK,     Set_Hour,    "Hours",   0,      23,     0,      47 ) \
     PARAM_ENTRY(CAT_CLOCK,     Set_Min,     "Mins",    0,      59,     0,      48 ) \
@@ -128,14 +130,14 @@
     PARAM_ENTRY(CAT_CLOCK,     Pre_Min,     "Mins",    0,      59,     0,      54 ) \
     PARAM_ENTRY(CAT_CLOCK,     Pre_Dur,     "Mins",    0,      60,     0,      55 ) \
     PARAM_ENTRY(CAT_IOPINS,    PumpPWM,    PumpOutType,0,      2,      0,      135 ) \
-    PARAM_ENTRY(CAT_IOPINS,    Out1Func,    PINFUNCS,  0,      17,     6,      80 ) \
-    PARAM_ENTRY(CAT_IOPINS,    Out2Func,    PINFUNCS,  0,      17,     7,      81 ) \
-    PARAM_ENTRY(CAT_IOPINS,    Out3Func,    PINFUNCS,  0,      17,     3,      82 ) \
-    PARAM_ENTRY(CAT_IOPINS,    SL1Func,     PINFUNCS,  0,      17,     0,      83 ) \
-    PARAM_ENTRY(CAT_IOPINS,    SL2Func,     PINFUNCS,  0,      17,     0,      84 ) \
-    PARAM_ENTRY(CAT_IOPINS,    PWM1Func,    PINFUNCS,  0,      22,     0,      85 ) \
-    PARAM_ENTRY(CAT_IOPINS,    PWM2Func,    PINFUNCS,  0,      22,     4,      86 ) \
-    PARAM_ENTRY(CAT_IOPINS,    PWM3Func,    PINFUNCS,  0,      22,     2,      87 ) \
+    PARAM_ENTRY(CAT_IOPINS,    Out1Func,    PINFUNCS,  0,      18,     6,      80 ) \
+    PARAM_ENTRY(CAT_IOPINS,    Out2Func,    PINFUNCS,  0,      18,     7,      81 ) \
+    PARAM_ENTRY(CAT_IOPINS,    Out3Func,    PINFUNCS,  0,      18,     3,      82 ) \
+    PARAM_ENTRY(CAT_IOPINS,    SL1Func,     PINFUNCS,  0,      18,     0,      83 ) \
+    PARAM_ENTRY(CAT_IOPINS,    SL2Func,     PINFUNCS,  0,      18,     0,      84 ) \
+    PARAM_ENTRY(CAT_IOPINS,    PWM1Func,    PINFUNCS,  0,      23,     0,      85 ) \
+    PARAM_ENTRY(CAT_IOPINS,    PWM2Func,    PINFUNCS,  0,      23,     4,      86 ) \
+    PARAM_ENTRY(CAT_IOPINS,    PWM3Func,    PINFUNCS,  0,      23,     2,      87 ) \
     PARAM_ENTRY(CAT_IOPINS,    GP12VInFunc, PINFUNCS,  0,      13,     12,     98 ) \
     PARAM_ENTRY(CAT_IOPINS,    HVReqFunc,   PINFUNCS,  0,      13,     12,     99 ) \
     PARAM_ENTRY(CAT_IOPINS,    PB1InFunc,   PINFUNCS,  0,      13,     12,     140 ) \
@@ -259,7 +261,11 @@
     VALUE_ENTRY(VehLockSt,     ONOFF,               2100 ) \
     VALUE_ENTRY(compressStat,  COMP_STAT,           2111 ) \
     VALUE_ENTRY(compressRPM,   "",                  2109 ) \
-//Next value Id: 2112
+    VALUE_ENTRY(mg1Req,        "",                  2112 ) \
+    VALUE_ENTRY(mg2Req,        "",                  2113 ) \
+    VALUE_ENTRY(fanSpeedReq,   "",                  2114 ) \
+    VALUE_ENTRY(compTargetTorq,"",                  2115 ) \
+//Next value Id: 2115
 
 //Dead params
 /*
@@ -271,8 +277,8 @@
 #define VERSTR STRINGIFY(4=VER)
 #define PINFUNCS     "0=None, 1=ChaDeMoAlw, 2=OBCEnable, 3=HeaterEnable, 4=RunIndication, 5=WarnIndication," \
                      "6=CoolantPump, 7=NegContactor, 8=BrakeLight, 9=ReverseLight, 10=HeatReq, 11=HVRequest," \
-                     "12=DCFCRequest, 13=BrakeVacPump, 14=CoolingFan, 15=HvActive, 16=ShiftLockNO, 17=PreHeatOut, 18=PwmTim3, 19=CpSpoof,"\
-                     "20=GS450pump, 21=PwmTempGauge, 22=PwmSocGauge"
+                     "12=DCFCRequest, 13=BrakeVacPump, 14=CoolingFan, 15=HvActive, 16=ShiftLockNO, 17=PreHeatOut, 18=CompClutch, 19=PwmTim3, 20=CpSpoof,"\
+                     "21=GS450pump, 22=PwmTempGauge, 23=PwmSocGauge"
 #define APINFUNCS    "0=None, 1=ProxPilot, 2=BrakeVacSensor, 3=HeaterPot"
 #define SHIFTERS     "0=None, 1=BMW_F30, 2=JLR_G1, 3=JLR_G2, 4=BMW_E65"
 #define SHNTYPE      "0=None, 1=ISA, 2=SBOX, 3=VAG. 4=ISA_udcsw"

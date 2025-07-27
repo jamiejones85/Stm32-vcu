@@ -147,8 +147,8 @@ void MGgen2V2Lcharger::Task100Ms()
 {
     int opmode = Param::GetInt(Param::opmode);
     uint8_t bytes[8];
-      if(opmode==MOD_RUN) //do some DC-DC stuff
-      {
+    if(opmode==MOD_RUN) //do some DC-DC stuff
+    {
         bytes[0] = 0x06;
         bytes[1] = 0xA0;
         bytes[2] = 0x26; //26 for on, 06 for off
@@ -191,55 +191,55 @@ void MGgen2V2Lcharger::Task100Ms()
 
         bytes[0] = 0x3B;
         bytes[1] = 0xCA;
-                bytes[2] = 0x86;
-                bytes[3] = 0x02;
-                bytes[4] = 0xFD;
-                bytes[5] = 0x60;
-                bytes[6] = 0x00;
-                bytes[7] = 0x00;
-                can->Send(0x29B, (uint32_t*)bytes, 8);
+        bytes[2] = 0x86;
+        bytes[3] = 0x02;
+        bytes[4] = 0xFD;
+        bytes[5] = 0x60;
+        bytes[6] = 0x00;
+        bytes[7] = 0x00;
+        can->Send(0x29B, (uint32_t*)bytes, 8);
 
 
-            }
+    }
             
-            if(opmode==MOD_CHARGE)
-            {
+    if(opmode==MOD_CHARGE)
+    {
 
-                 setVolts=Param::GetInt(Param::Voltspnt)*10;
-                 actVolts=Param::GetInt(Param::udc);
-                /*
-                bytes[0] = 0x06;
-                bytes[1] = 0xA0;
-                bytes[2] = 0x26; //26 for on, 06 for off
-                bytes[3] = 0x00;  
-                bytes[4] = 0x00; 
-                bytes[5] = 0x00; 
-                bytes[6] = 0x00;
-                bytes[7] = 0x7F; 
-                can->Send(0x19C, (uint32_t*)bytes, 8);
+        setVolts=Param::GetInt(Param::Voltspnt)*10;
+        actVolts=Param::GetInt(Param::udc);
+        /*
+        bytes[0] = 0x06;
+        bytes[1] = 0xA0;
+        bytes[2] = 0x26; //26 for on, 06 for off
+        bytes[3] = 0x00;  
+        bytes[4] = 0x00; 
+        bytes[5] = 0x00; 
+        bytes[6] = 0x00;
+        bytes[7] = 0x7F; 
+        can->Send(0x19C, (uint32_t*)bytes, 8);
 
-                bytes[0] = 0x00;
-                bytes[1] = 0x06; // 01 is stand by, 03 is driving, 06 is AC charging, 07 is CCS charging
-                bytes[2] = 0x00;
-                bytes[3] = 0x00;
-                bytes[4] = 0x00;
-                bytes[5] = 0x00;
-                bytes[6] = 0x20; // 20 to wake up charger.
-                bytes[7] = 0x00;
-                can->Send(0x297, (uint32_t*)bytes, 8); // 297 is BMS state
+        bytes[0] = 0x00;
+        bytes[1] = 0x06; // 01 is stand by, 03 is driving, 06 is AC charging, 07 is CCS charging
+        bytes[2] = 0x00;
+        bytes[3] = 0x00;
+        bytes[4] = 0x00;
+        bytes[5] = 0x00;
+        bytes[6] = 0x20; // 20 to wake up charger.
+        bytes[7] = 0x00;
+        can->Send(0x297, (uint32_t*)bytes, 8); // 297 is BMS state
         */
-                bytes[0] = 0x0E; //0E to wake up
-                bytes[1] = 0x00;
-                bytes[2] = 0x00;
-                bytes[3] = 0x00;
-                bytes[4] = 0x00;
-                bytes[5] = 0x00;
-                bytes[6] = 0x20; 
-                bytes[7] = 0x00;
-                can->Send(0x1F1, (uint32_t*)bytes, 8);
+        bytes[0] = 0x0E; //0E to wake up
+        bytes[1] = 0x00;
+        bytes[2] = 0x00;
+        bytes[3] = 0x00;
+        bytes[4] = 0x00;
+        bytes[5] = 0x00;
+        bytes[6] = 0x20; 
+        bytes[7] = 0x00;
+        can->Send(0x1F1, (uint32_t*)bytes, 8);
 
                 
-                bytes[0] = 0x00;
+        bytes[0] = 0x00;
         bytes[1] = 0x06; // 01 is stand by, 03 is driving, 06 is AC charging, 07 is CCS charging
         bytes[2] = 0x00;
         bytes[3] = 0x00;
@@ -258,8 +258,6 @@ void MGgen2V2Lcharger::Task100Ms()
         bytes[6] = 0x00;
         bytes[7] = 0x00;
         can->Send(0x29B, (uint32_t*)bytes, 8);
-
-
 
         bytes[0] = 0x00;
         bytes[1] = 0x00;
@@ -363,18 +361,7 @@ void MGgen2V2Lcharger::Task100Ms()
         bytes[7] = 0x00;
         can->Send(0x322, (uint32_t*)bytes, 8);
 
-        bytes[0] = 0x00;
-        bytes[1] = 0x28;
-        bytes[2] = 0x00;
-        bytes[3] = 0x00;
-        bytes[4] = 0x10;
-        bytes[5] = 0x43;
-        bytes[6] = 0x00;
-        bytes[7] = 0x00;
-        can->Send(0x394, (uint32_t*)bytes, 8);
-
-
-    }
+  
         if(clearToStart)
         {   
             if(actVolts<Param::GetInt(Param::Voltspnt)) currentRamp++;
@@ -395,19 +382,20 @@ void MGgen2V2Lcharger::Task100Ms()
         else
         {
             
-      bytes[0] = 0x28; 
-      bytes[1] = 0xFF; 
-      bytes[2] = 0x83; 
-      bytes[3] = 0xFF; 
-      bytes[4] = 0x00; 
-      bytes[5] = 0xFF; 
-      bytes[6] = 0x7F;
-      bytes[7] = 0xFF; 
-      can->Send(0x29C, (uint32_t*)bytes, 8);
+            bytes[0] = 0x28; 
+            bytes[1] = 0xFF; 
+            bytes[2] = 0x83; 
+            bytes[3] = 0xFF; 
+            bytes[4] = 0x00; 
+            bytes[5] = 0xFF; 
+            bytes[6] = 0x7F;
+            bytes[7] = 0xFF; 
+            can->Send(0x29C, (uint32_t*)bytes, 8);
 
         }
-
     }
+
+}
 
 
 void MGgen2V2Lcharger::Off()
@@ -559,10 +547,10 @@ void MGgen2V2Lcharger::handle324(uint32_t data[2])
     batteryVolts =((bytes[1]<<8) | (bytes[2]))*0.02;;
 
 
-    if (Param::GetInt(Param::ShuntType) == 0 && Param::GetInt(Param::Inverter)!= 1)//Only populate if no shunt is used and not using Leaf inverter !!!look to clean up
-    {
-       // Param::SetFloat(Param::udc, batteryVolts);
-    }
+    // if (Param::GetInt(Param::ShuntType) == 0 && Param::GetInt(Param::Inverter)!= 1)//Only populate if no shunt is used and not using Leaf inverter !!!look to clean up
+    // {
+       Param::SetFloat(Param::udc, batteryVolts);
+    // }
 
 }
 
