@@ -19,7 +19,7 @@
 
 #include "OutlanderCompressor.h"
 #include "OutlanderHeartBeat.h"
-
+#include "iomatrix.h"   
 
 uint16_t rpm;
 
@@ -50,10 +50,15 @@ void OutlanderCompressor::Task100Ms()
    bytes[6] = 0x00;
    bytes[7] = 0x03;
 
+
    uint8_t airConCtrl = Param::GetInt(Param::AirConCtrl);
-   uint16_t compressorTargetRpm = Param::GetInt(Param::CompTargetRPM);
-   
-   if (airConCtrl == 1) {
+   bool acOn = airConCtrl == 1;
+
+   if (IOMatrix::GetPin(IOMatrix::COMPRCLUTCH) != &DigIo::dummypin) {
+      acOn = IOMatrix::GetPin(IOMatrix::COMPRCLUTCH)->Get();
+   }  
+
+   if (acOn) {
       bytes[0] = 0x0B;
 
       if (rpm < 4000) {
