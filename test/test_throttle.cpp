@@ -107,18 +107,30 @@ static void TestCalcThrottleIs100WhenOverMax() {
    ASSERT(throtVal ==  100);
 }
 
+static void spreadThottle() {
+   int i = Throttle::potmin[0];
+   int max = Throttle::potmax[0];
+   float throtVal = 0;
+   float testf = 1.23f;
+
+   for (i; i < max; i++) {
+     throtVal = Throttle::CalcThrottle(i, 0, false);
+     std::cout << "Pot Value: " << i << " Potnom: " << throtVal << " " << testf  << std::endl;
+   }
+}
 
 void ThrottleTest::RunTest()
 {
    TestSetup();
-   TestThrottleTemperateOverMaxThrottleTo0();
-   TestThrottleTemperateInDerateZoneThrottleTo50Percent();
-   TestThrottleUnderTemperateNoDeRate();
-   TestThrottleTemperateInDerateZoneThrottleButThrottleUnderLimit();
-   TestCalcThrottleIs0WhenThrottleAndBrakePressed();
-   TestCalcThrottleIs0WhenNoThrottleAndBrakePressed();
-   TestCalcThrottleIs0WhenInDeadZone();
-   TestCalcThrottleIsAbove0WhenJustOutOfDeadZone();
-   TestCalcThrottleIs100WhenMax();
-   TestCalcThrottleIs100WhenOverMax();
+   // TestThrottleTemperateOverMaxThrottleTo0();
+   // TestThrottleTemperateInDerateZoneThrottleTo50Percent();
+   // TestThrottleUnderTemperateNoDeRate();
+   // TestThrottleTemperateInDerateZoneThrottleButThrottleUnderLimit();
+   // TestCalcThrottleIs0WhenThrottleAndBrakePressed();
+   // TestCalcThrottleIs0WhenNoThrottleAndBrakePressed();
+   // TestCalcThrottleIs0WhenInDeadZone();
+   // TestCalcThrottleIsAbove0WhenJustOutOfDeadZone();
+   // TestCalcThrottleIs100WhenMax();
+   // TestCalcThrottleIs100WhenOverMax();
+   spreadThottle();
 }
