@@ -145,6 +145,10 @@
     PARAM_ENTRY(CAT_IOPINS,    DigiPot2Step,"dig",     0,      255,    0,      118 ) \
     PARAM_ENTRY(CAT_IOPINS,    FanTemp,     "°C",      0,      100,    40,     134 ) \
     PARAM_ENTRY(CAT_IOPINS,    TachoPPR,    "PPR",     0,      100,    2,      136 ) \
+    PARAM_ENTRY(CAT_12V,       uauxGain,    "",        0,      500,    210,    145 ) \
+    PARAM_ENTRY(CAT_12V,       minVolts,    "",        11,     13,     12,     146 ) \
+    PARAM_ENTRY(CAT_12V,       allowWakeup, ONOFF,     0,      1,      0,      147 ) \
+    PARAM_ENTRY(CAT_12V,       wakeupMin,   "Mins",    0,      20,     0,      148 ) \
     PARAM_ENTRY(CAT_SHUNT,     IsaInit,     ONOFF,     0,      1,      0,      75 ) \
     PARAM_ENTRY(CAT_PWM,       Tim3_Presc,  "",        1,      72000,  719,    100 ) \
     PARAM_ENTRY(CAT_PWM,       Tim3_Period, "",        1,      100000, 7200,   101 ) \
@@ -248,7 +252,9 @@
     VALUE_ENTRY(VehLockSt,     ONOFF,               2100 ) \
     VALUE_ENTRY(compressStat,  COMP_STAT,           2108 ) \
     VALUE_ENTRY(compressRPM,   "",                  2109 ) \
-    VALUE_ENTRY(acOff,   "",                  2110 ) \
+    VALUE_ENTRY(acOff,         "",                  2110 ) \
+    VALUE_ENTRY(maintainWakeups,"",                 2111 ) \
+    VALUE_ENTRY(minsUntilAllowedAgain,"",           2112 ) \
 
 //Next value Id: 2110
 
@@ -275,7 +281,7 @@
 #define PLTMODES     "0=Absent, 1=ACStd, 2=ACchg, 3=Error, 4=CCS_Not_Rdy, 5=CCS_Rdy, 6=Static"
 #define VEHMODES     "0=BMW_E46, 1=BMW_E6x+, 2=Classic, 3=None, 5=BMW_E39, 6=VAG, 7=Subaru, 8=BMW_E31"
 #define BMSMODES     "0=Off, 1=SimpBMS, 2=TiDaisychainSingle, 3=TiDaisychainDual, 4=LeafBms, 5=RenaultKangoo33"
-#define OPMODES      "0=Off, 1=Run, 2=Precharge, 3=PchFail, 4=Charge"
+#define OPMODES      "0=Off, 1=Run, 2=Precharge, 3=PchFail, 4=Charge, 5=12VMaintain"
 #define DOW          "0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat"
 #define CHGTYPS      "0=Off, 1=AC, 2=DCFC"
 #define DCDCTYPES    "0=NoDCDC, 1=TeslaG2"
@@ -321,6 +327,7 @@
 #define COMPRESSMODES "0=None, 1=Outlander"
 #define COMP_STAT    "0=NoHv, 1=HvPresent, 2=NoHeartBeat, 3=Start, 4=Running"
 #define CAT_AIRCON   "Air Conditioning"
+#define CAT_12V      "12V Battery"
 
 #define CAN_PERIOD_100MS    0
 #define CAN_PERIOD_10MS     1
@@ -335,6 +342,7 @@ enum modes
     MOD_PRECHARGE,
     MOD_PCHFAIL,
     MOD_CHARGE,
+    MOD_MAINTAIN,
     MOD_LAST
 };
 

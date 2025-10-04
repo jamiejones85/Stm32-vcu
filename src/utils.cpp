@@ -347,7 +347,7 @@ float ProcessUdc(int motorSpeed)
     //Calculate "12V" supply voltage from voltage divider on mprot pin
     //1.2/(4.7+1.2)/3.33*4095 = 250 -> make it a bit less for pin losses etc
     //HW_REV1 had 3.9k resistors
-    int uauxGain = 210; //!! hard coded AUX gain
+    int uauxGain = Param::GetInt(Param::uauxGain);
     Param::SetFloat(Param::uaux, ((float)AnaIn::uaux.Get()) / uauxGain);
 
     float udclim = Param::GetFloat(Param::udclim);
