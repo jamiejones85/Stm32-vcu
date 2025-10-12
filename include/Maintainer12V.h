@@ -26,7 +26,7 @@
 class Maintainer12V {
 public:
   Maintainer12V();
-  void Task200Ms(int opmode, unsigned hours, unsigned minutes);
+  void Task200Ms(int opmode);
   void Ms10Task();
   void ParamsChange();
   void SetInitByMaintainer(bool initbyM);
@@ -37,7 +37,7 @@ public:
 
 private:
   uint8_t minsUntilAllowedAgain;
-  uint8_t minsUntilAllowedAgainTicks;
+  uint16_t minsUntilAllowedAgainTicks;
   uint8_t preHeatSet;
   bool runMaintainer;
   uint32_t maintainTicks;

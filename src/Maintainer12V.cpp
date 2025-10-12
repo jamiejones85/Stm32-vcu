@@ -24,7 +24,7 @@
 #include "iomatrix.h"
 #include "utils.h"
 
-#define WAKEUP_BLOCK_MINS 5
+#define WAKEUP_BLOCK_MINS 90
 
 Maintainer12V::Maintainer12V() {
   // ctor
@@ -32,6 +32,7 @@ Maintainer12V::Maintainer12V() {
   Maintainer12V::maintainTicks_1Min = 0;
   Maintainer12V::initbyMaintain = false;
   Maintainer12V::minsUntilAllowedAgain = WAKEUP_BLOCK_MINS;
+  Maintainer12V::minsUntilAllowedAgainTicks = 0;
 }
 
 void Maintainer12V::SetInitByMaintainer(bool initbyM) {
@@ -50,30 +51,32 @@ void Maintainer12V::Ms10Task() {
   }
 }
 
-void Maintainer12V::Task200Ms(int opmode, unsigned hours, unsigned minutes) {
-    minsUntilAllowedAgainTicks++;
-    //reset every second
-    if (minsUntilAllowedAgainTicks > 5) {
-      minsUntilAllowedAgainTicks = 0;
-      if (minsUntilAllowedAgain > 0) {
-        minsUntilAllowedAgain--;
-        Param::SetInt(Param::minsUntilAllowedAgain, minsUntilAllowedAgain);
-      }
-    }
-
+void Maintainer12V::Task200Ms(int opmode) {
+    Param::SetInt(Param::minsUntilAllowedAgain, minsUntilAllowedAgain);
 
     if (opmode != MOD_MAINTAIN) {
+      //reset every minute
+      if (minsUntilAllowedAgain > 0) {
+        minsUntilAllowedAgainTicks++;
+        if (minsUntilAllowedAgainTicks >= 300) {
+          minsUntilAllowedAgainTicks = 0;
+          minsUntilAllowedAgain--;
+        }
+      }
       uint8_t allowWakeup = Param::GetInt(Param::allowWakeup);
 
       float actual12V = Param::GetFloat(Param::uaux);
       float min12V = Param::GetFloat(Param::minVolts);
+
+      maintainDur_tmp = GetInt(Param::wakeupMin);
+
       if (allowWakeup && actual12V < min12V && minsUntilAllowedAgain < 1 &&
           (maintainDur_tmp != 0)) {
         minsUntilAllowedAgain = WAKEUP_BLOCK_MINS;
+        maintainTicks = (GetInt(Param::wakeupMin) * 300); // initialize timer
+        maintainTicks_1Min = 0;
         runMaintainer = true; // if we arrive at set preheat time and duration is
                            // non zero then initiate preheat
-      } else {
-        runMaintainer = false;
       }
     }
 

@@ -107,6 +107,7 @@
 #include "NoCompressor.h"
 #include "OutlanderCompressor.h"
 #include "Maintainer12V.h"
+#include "MGgen2V2Lcharger.h"
 
 #define PRECHARGE_TIMEOUT 5  //5s
 
@@ -204,6 +205,7 @@ static NoCompressor CompressorNone;
 static OutlanderCompressor outlanderCompressor;
 static Compressor* selectedCompressor = &CompressorNone;
 static Maintainer12V maintainer12V;
+static MGgen2V2Lcharger MGgen2v2l;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 static void Ms200Task(void)
@@ -364,7 +366,7 @@ static void Ms200Task(void)
         IOMatrix::GetPin(IOMatrix::BRAKEVACPUMP)->Clear();
     }
 
-    maintainer12V.Task200Ms(opmode, hours, minutes);
+    maintainer12V.Task200Ms(opmode);
 
 }
 
@@ -496,7 +498,7 @@ static void Ms100Task(void)
     }
 
     //HV Active output
-    if(opmode==MOD_CHARGE || opmode==MOD_RUN)
+    if(opmode==MOD_CHARGE || opmode==MOD_RUN || opmode==MOD_MAINTAIN)
     {
         IOMatrix::GetPin(IOMatrix::HVACTIVE)->Set();//HV Active On
     }
@@ -902,7 +904,9 @@ static void UpdateCharger()
     case ChargeModes::Elcon:
         selectedCharger = &ChargerElcon;
         break;
-
+    case ChargeModes::MGgen2:
+        selectedCharger = &MGgen2v2l;
+        break;
     }
     //This will call SetCanFilters() via the Clear Callback
     canInterface[0]->ClearUserMessages();
