@@ -421,7 +421,7 @@ float ProcessThrottle(int speed)
         ErrorMessage::Post(ERR_TMPMMAX);
     }
 
-    finalSpnt = Throttle::RampThrottle(finalSpnt); //Move ramping as last step -intro V2.30A
+    //finalSpnt = Throttle::RampThrottle(finalSpnt); //Move ramping as last step -intro V2.30A
 
     // make sure the torque percentage is NEVER out of range
     if (finalSpnt < -100.0f)

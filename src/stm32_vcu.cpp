@@ -108,6 +108,7 @@
 #include "OutlanderCompressor.h"
 #include "Maintainer12V.h"
 #include "MGgen2V2Lcharger.h"
+#include "preheater.h"
 
 #define PRECHARGE_TIMEOUT 5  //5s
 
@@ -206,6 +207,7 @@ static OutlanderCompressor outlanderCompressor;
 static Compressor* selectedCompressor = &CompressorNone;
 static Maintainer12V maintainer12V;
 static MGgen2V2Lcharger MGgen2v2l;
+static Preheater preheater;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 static void Ms200Task(void)
@@ -367,6 +369,7 @@ static void Ms200Task(void)
     }
 
     maintainer12V.Task200Ms(opmode);
+    preheater.Task200Ms(opmode, hours, minutes);
 
 }
 
@@ -512,7 +515,8 @@ static void ControlCabHeater(int opmode)
 {
     //Only run heater in run mode
     //What about charge mode and timer mode?
-    if (opmode == MOD_RUN && Param::GetInt(Param::Control) == 1)
+    if ((opmode == MOD_RUN && Param::GetInt(Param::Control) == 1) ||
+      opmode == MOD_PREHEAT)
     {
         IOMatrix::GetPin(IOMatrix::HEATERENABLE)->Set();//Heater enable and coolant pump on
         selectedHeater->SetTargetTemperature(50); //TODO: Currently does nothing
@@ -567,7 +571,7 @@ static void Ms10Task(void)
                 torquePercent = -torquePercent;
             }
         }
-
+    
         torquePercent *= requestedDirection; //torque requests invert when reverse direction is selected
 
         selectedInverter->Task10Ms();
@@ -631,6 +635,7 @@ static void Ms10Task(void)
         initbyStart=false;
         initbyCharge=false;
         maintainer12V.SetInitByMaintainer(false);
+        preheater.SetInitByPreHeat(false);
 
         DigIo::inv_out.Clear();//inverter power off
         IOMatrix::GetPin(IOMatrix::COOLANTPUMP)->Clear();//Coolant pump off if used
@@ -670,6 +675,12 @@ static void Ms10Task(void)
             vehicleStartTime = rtc_get_counter_val();
             maintainer12V.SetInitByMaintainer(true);
         }
+        if (preheater.GetRunPreHeat()) {
+            opmode = MOD_PRECHARGE; // proceed to precharge if charge requested.
+            rlyDly = 25;            // Recharge sequence timer
+            vehicleStartTime = rtc_get_counter_val();
+            preheater.SetInitByPreHeat(true);
+        }
         Param::SetInt(Param::opmode, opmode);
         break;
 
@@ -705,13 +716,18 @@ static void Ms10Task(void)
                 rlyDly = 25;                         // Recharge sequence timer
                 Param::SetInt(Param::TorqDerate, 0); // clear torque derate reason
                 Param::SetInt(Param::maintainWakeups, Param::GetInt(Param::maintainWakeups) + 1);
+            } else if (preheater.GetRunPreHeat()) {
+                opmode = MOD_PREHEAT;
+                rlyDly = 25;                         // Recharge sequence timer
+                Param::SetInt(Param::TorqDerate, 0); // clear torque derate reason
             }
 
         }
         if(initbyCharge && !chargeMode) opmode = MOD_OFF;// These two statements catch a precharge hang from either start mode or run mode.
         if(initbyStart && !selectedVehicle->Ready()) opmode = MOD_OFF;
         if (maintainer12V.GetInitByMaintainer() && !maintainer12V.GetRunMaintainer()) opmode = MOD_OFF;
-        
+        if (preheater.GetInitByPreHeat() && !preheater.GetRunPreHeat()) opmode = MOD_OFF;
+
         if (udc < (Param::GetInt(Param::udcsw)) && rtc_get_counter_val() > (vehicleStartTime + PRECHARGE_TIMEOUT))
         {
             DigIo::prec_out.Clear();
@@ -780,6 +796,24 @@ static void Ms10Task(void)
         }
 
         break;
+    case MOD_PREHEAT:
+        if (rlyDly != 0)
+        rlyDly--; // here we are going to pause before energising precharge to
+                    // prevent too many contactors pulling amps at the same time
+        if (rlyDly == 0) {
+         DigIo::dcsw_out.Set();
+        }
+
+        preheater.Ms10Task();
+
+        if (!preheater.GetRunPreHeat()) {
+            rlyDly = 250; // Recharge sequence timer for delayed shutdown
+        }
+        if ((selectedVehicle->Start() && selectedVehicle->Ready())) {
+            preheater.CancelPreHeater();
+        }
+        break;
+  
     }
 
     ControlCabHeater(opmode);
@@ -1224,6 +1258,7 @@ void Param::Change(Param::PARAM_NUM paramNum)
     IOMatrix::AssignFromParamsAnalogue();
 
     maintainer12V.ParamsChange();
+    preheater.ParamsChange();
 
 }
 

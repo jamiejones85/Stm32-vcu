@@ -475,12 +475,12 @@ void GS450HClass::Task1Ms()
         break;
     case 4:
         // -3500 (reverse) to 3500 (forward)
-        Param::SetInt(Param::torque,mg2_torque);//post processed final torue value sent to inv to web interface
-
+  
         //speed feedback
         speedSum=mg2_speed+mg1_speed;
         speedSum/=113;
         speedSum2=speedSum;
+
         htm_data[0]=speedSum2;
         htm_data[75]=(mg1_torque*4) & 0xFF;
         htm_data[76]=((mg1_torque*4)>>8) & 0xFF;
@@ -502,6 +502,10 @@ void GS450HClass::Task1Ms()
 
         htm_data[65]=(27500)&0xFF;  // discharge ability of battery
         htm_data[66]=((27500)>>8);
+
+        Param::SetInt(Param::MG1Raw, htm_data[5] | (htm_data[6] << 8));
+        Param::SetInt(Param::MG1Raw2,  htm_data[75] | (htm_data[76] << 8));
+        Param::SetInt(Param::MG2Raw, htm_data[26] | (htm_data[27] << 8));
 
         //!!moved to checksum function.
         /*
