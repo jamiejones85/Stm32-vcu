@@ -22,9 +22,31 @@
 #include "hwinit.h"
 #include "temp_meas.h"
 #include <libopencm3/stm32/timer.h>
+#include <libopencm3/stm32/dma.h>
+#include <libopencm3/cm3/nvic.h>
 #include "anain.h"
 #include "my_math.h"
 #include "utils.h"
+
+// DMA completion flags - must be volatile for ISR access
+static volatile bool tx_complete_flag = false;
+static volatile bool rx_complete_flag = false;
+
+// Timeout and error tracking
+static uint16_t rx_timeout = 0;
+static const uint16_t RX_TIMEOUT_MS = 20;  // 20ms timeout for inverter response
+static uint16_t consecutive_failures = 0;
+static const uint16_t MAX_FAILURES = 10;   // Enter safe mode after 10 failures
+
+// Double buffering for DMA to prevent data corruption
+static uint8_t rx_buffer_a[140];
+static uint8_t rx_buffer_b[140];
+static uint8_t *active_rx_buffer = rx_buffer_a;      // DMA writes here
+static uint8_t *processing_rx_buffer = rx_buffer_b;  // CPU reads here
+
+// Inverter processing delay counter
+static uint8_t inverter_delay_counter = 0;
+static const uint8_t INVERTER_PROCESSING_TIME_MS = 3;  // Give inverter time to process
 
 #define  LOW_Gear  0
 #define  HIGH_Gear  1
@@ -35,7 +57,6 @@
 #define IS300H 3
 
 static uint8_t DriveType = 0;
-volatile int received = 0;
 static uint8_t htm_state = 0;
 static uint8_t inv_status = 1;//must be 1 for gs450h and gs300h
 uint16_t counter;
@@ -51,6 +72,40 @@ static uint8_t gearAct, gearReq, gearStep=0;
 
 static void dma_read(uint8_t *data, int size);
 static void dma_write(const uint8_t *data, int size);
+
+// DMA interrupt service routines
+extern "C" void dma1_channel6_isr(void) {
+    // RX DMA complete interrupt
+    if (dma_get_interrupt_flag(DMA1, DMA_CHANNEL6, DMA_TCIF)) {
+        dma_clear_interrupt_flags(DMA1, DMA_CHANNEL6, DMA_TCIF);
+        rx_complete_flag = true;
+
+        // Swap buffers to prevent corruption while processing
+        uint8_t *temp = active_rx_buffer;
+        active_rx_buffer = processing_rx_buffer;
+        processing_rx_buffer = temp;
+    }
+}
+
+extern "C" void dma1_channel7_isr(void) {
+    // TX DMA complete interrupt
+    if (dma_get_interrupt_flag(DMA1, DMA_CHANNEL7, DMA_TCIF)) {
+        dma_clear_interrupt_flags(DMA1, DMA_CHANNEL7, DMA_TCIF);
+        tx_complete_flag = true;
+    }
+}
+
+// Helper function to check if DMA channel is busy
+static bool dma_channel_is_enabled(uint32_t dma, uint8_t channel) {
+    return (DMA_CCR(dma, channel) & DMA_CCR_EN) != 0;
+}
+
+// Helper function to verify MTH frame checksum
+static int VerifyMTHChecksumNew(uint8_t *data, int length) {
+    uint8_t checksum = 0;
+    for (int i = 0; i < length - 1; i++) checksum += data[i];
+    return (checksum == data[length - 1]);
+}
 
 //80 bytes out and 100 bytes back in (with offset of 8 bytes.
 static uint8_t mth_data[140];
@@ -419,59 +474,84 @@ void GS450HClass::Task1Ms()
     switch(htm_state)
     {
     case 0:
-        dma_read(mth_data,100);//read in mth data via dma. Probably need some kind of check dma complete flag here
+        // Start DMA read using double buffer - DMA writes to active_rx_buffer, we process from processing_rx_buffer
+        rx_complete_flag = false;
+        rx_timeout = 0;
+        dma_read(active_rx_buffer,100);
         DigIo::req_out.Clear(); //HAL_GPIO_WritePin(HTM_SYNC_GPIO_Port, HTM_SYNC_Pin, 0);
         htm_state++;
         break;
     case 1:
         DigIo::req_out.Set();  //HAL_GPIO_WritePin(HTM_SYNC_GPIO_Port, HTM_SYNC_Pin, 1);
 
+        // Only transmit if previous TX completed (checked via flag or channel not busy)
         if(inv_status==0)
         {
-            if (dma_get_interrupt_flag(DMA1, DMA_CHANNEL7, DMA_TCIF))// if the transfer complete flag is set then send another packet
+            if (tx_complete_flag || !dma_channel_is_enabled(DMA1, DMA_CHANNEL7))
             {
-                dma_clear_interrupt_flags(DMA1, DMA_CHANNEL7, DMA_TCIF);//clear the flag.
-                dma_write(htm_data,80); //HAL_UART_Transmit_IT(&huart2, htm_data, 80);
+                tx_complete_flag = false;
+                dma_write(htm_data,80);
             }
-
         }
         else
         {
-            dma_write(htm_data_setup,80);   //HAL_UART_Transmit_IT(&huart2, htm_data_setup, 80);
-            if(mth_data[1]!=0) inv_status--;
-            if(mth_data[1]==0) inv_status=1;
+            tx_complete_flag = false;
+            dma_write(htm_data_setup,80);
+            if(processing_rx_buffer[1]!=0) inv_status--;  // Use processing buffer
+            if(processing_rx_buffer[1]==0) inv_status=1;
         }
         htm_state++;
         break;
     case 2:
-        htm_state++;
+        // Add delay to give inverter time to process the command
+        inverter_delay_counter++;
+        if(inverter_delay_counter >= INVERTER_PROCESSING_TIME_MS) {
+            inverter_delay_counter = 0;
+            htm_state++;
+        }
         break;
     case 3:
-        if(VerifyMTHChecksum(100)==0 || dma_get_interrupt_flag(DMA1, DMA_CHANNEL6, DMA_TCIF)==0)
-        {
-            statusInv=0;
-            //set speeds to 0 to prevent dynamic throttle/regen issues
-            mg1_speed=0;
-            mg2_speed=0;
-            //disable cruise
-            Param::SetInt(Param::cruisespeed, 0);
-        }
-        else
-        {
-            //exchange data and prepare next HTM frame
-            dma_clear_interrupt_flags(DMA1, DMA_CHANNEL6, DMA_TCIF);
-            statusInv=1;
-            dc_bus_voltage=(((mth_data[82]|mth_data[83]<<8)-5)/2);
-            temp_inv_water=int8_t(mth_data[42]);
-            temp_inv_inductor=int8_t(mth_data[86]);
-            mg1_speed=mth_data[6]|mth_data[7]<<8;
-            mg2_speed=mth_data[31]|mth_data[32]<<8;
-        }
+        // Wait for RX completion with timeout
+        if(rx_complete_flag) {
+            rx_complete_flag = false;
+            // Check buffer integrity - processing_rx_buffer was swapped by ISR
+            if(VerifyMTHChecksum(100)==0 && VerifyMTHChecksumNew(processing_rx_buffer, 100)==0)
+            {
+                consecutive_failures++;
+                if(consecutive_failures > MAX_FAILURES) {
+                    statusInv=0;
+                    mg1_speed=0;
+                    mg2_speed=0;
+                    Param::SetInt(Param::cruisespeed, 0);
+                }
+            }
+            else
+            {
+                //exchange data and prepare next HTM frame using processing buffer
+                consecutive_failures = 0;
+                statusInv=1;
+                dc_bus_voltage=(((processing_rx_buffer[82]|processing_rx_buffer[83]<<8)-5)/2);
+                temp_inv_water=int8_t(processing_rx_buffer[42]);
+                temp_inv_inductor=int8_t(processing_rx_buffer[86]);
+                mg1_speed=processing_rx_buffer[6]|processing_rx_buffer[7]<<8;
+                mg2_speed=processing_rx_buffer[31]|processing_rx_buffer[32]<<8;
 
-        mth_data[98]=0;
-        mth_data[99]=0;
-
-        htm_state++;
+                // Copy to mth_data for compatibility with existing code
+                for(int i=0; i<100; i++) mth_data[i] = processing_rx_buffer[i];
+            }
+            htm_state++;
+        } else {
+            // Handle timeout
+            rx_timeout++;
+            if(rx_timeout > RX_TIMEOUT_MS) {
+                consecutive_failures++;
+                statusInv=0;
+                mg1_speed=0;
+                mg2_speed=0;
+                Param::SetInt(Param::cruisespeed, 0);
+                htm_state++; // Move on despite timeout
+            }
+        }
         break;
     case 4:
         // -3500 (reverse) to 3500 (forward)
@@ -819,6 +899,13 @@ static void dma_write(const uint8_t *data, int size)
     dma_set_memory_size(DMA1, DMA_CHANNEL7, DMA_CCR_MSIZE_8BIT);
     dma_set_priority(DMA1, DMA_CHANNEL7, DMA_CCR_PL_MEDIUM);
 
+    // Enable DMA transfer complete interrupt
+    dma_enable_transfer_complete_interrupt(DMA1, DMA_CHANNEL7);
+
+    // Enable NVIC for DMA channel 7
+    nvic_enable_irq(NVIC_DMA1_CHANNEL7_IRQ);
+    nvic_set_priority(NVIC_DMA1_CHANNEL7_IRQ, 0x40);
+
     dma_enable_channel(DMA1, DMA_CHANNEL7);
 
     usart_enable_tx_dma(USART2);
@@ -841,6 +928,13 @@ static void dma_read(uint8_t *data, int size)
     dma_set_peripheral_size(DMA1, DMA_CHANNEL6, DMA_CCR_PSIZE_8BIT);
     dma_set_memory_size(DMA1, DMA_CHANNEL6, DMA_CCR_MSIZE_8BIT);
     dma_set_priority(DMA1, DMA_CHANNEL6, DMA_CCR_PL_LOW);
+
+    // Enable DMA transfer complete interrupt
+    dma_enable_transfer_complete_interrupt(DMA1, DMA_CHANNEL6);
+
+    // Enable NVIC for DMA channel 6
+    nvic_enable_irq(NVIC_DMA1_CHANNEL6_IRQ);
+    nvic_set_priority(NVIC_DMA1_CHANNEL6_IRQ, 0x40);
 
     dma_enable_channel(DMA1, DMA_CHANNEL6);
 

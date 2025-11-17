@@ -218,18 +218,18 @@ float Throttle::CalcThrottle(int potval, int potIdx, bool brkpedal)
     PedalChange = PedalPos - TempAvgPos; //current pedal position compared to average
 
 
-    if(PedalChange < -1.0 )//Check pedal is release compared to last time
-    {
-        PedalReq = -1; //pedal is released enough - Commanding regen or slowing
-    }
-    else if(PedalChange > 1.0 )//Check pedal is increased compared to last time
-    {
-        PedalReq = 1; //pedal pressed - Commanding accelerating - thus always more power
-    }
-    else//pedal not changed
-    {
+    // if(PedalChange < -1.0 )//Check pedal is release compared to last time
+    // {
+    //     PedalReq = -1; //pedal is released enough - Commanding regen or slowing
+    // }
+    // else if(PedalChange > 1.0 )//Check pedal is increased compared to last time
+    // {
+    //     PedalReq = 1; //pedal pressed - Commanding accelerating - thus always more power
+    // }
+    // else//pedal not changed
+    // {
         potnom = TempAvgPos; //use the averaged pedal
-    }
+    // }
 
 
     //Do clever bits for regen and such.
