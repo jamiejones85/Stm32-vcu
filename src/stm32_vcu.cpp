@@ -520,7 +520,7 @@ static void ControlCabHeater(int opmode)
     {
         IOMatrix::GetPin(IOMatrix::HEATERENABLE)->Set();//Heater enable and coolant pump on
         selectedHeater->SetTargetTemperature(50); //TODO: Currently does nothing
-        selectedHeater->SetPower(Param::GetInt(Param::HeatPwr),Param::GetBool(Param::HeatReq));
+        selectedHeater->SetPower(Param::GetInt(Param::HeatPwr),Param::GetBool(Param::HeatReq) || opmode == MOD_PREHEAT);
     }
     else
     {
