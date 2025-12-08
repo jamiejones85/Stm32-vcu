@@ -501,7 +501,7 @@ static void Ms100Task(void)
     }
 
     //HV Active output
-    if(opmode==MOD_CHARGE || opmode==MOD_RUN || opmode==MOD_MAINTAIN)
+    if(opmode==MOD_CHARGE || opmode==MOD_RUN || opmode==MOD_MAINTAIN || opmode==MOD_PREHEAT)
     {
         IOMatrix::GetPin(IOMatrix::HVACTIVE)->Set();//HV Active On
     }
@@ -515,12 +515,12 @@ static void ControlCabHeater(int opmode)
 {
     //Only run heater in run mode
     //What about charge mode and timer mode?
-    if ((opmode == MOD_RUN && Param::GetInt(Param::Control) == 1) ||
+    if ((opmode == MOD_RUN && Param::GetInt(Param::Control) > 0) ||
       opmode == MOD_PREHEAT)
     {
         IOMatrix::GetPin(IOMatrix::HEATERENABLE)->Set();//Heater enable and coolant pump on
         selectedHeater->SetTargetTemperature(50); //TODO: Currently does nothing
-        selectedHeater->SetPower(Param::GetInt(Param::HeatPwr),Param::GetBool(Param::HeatReq) || opmode == MOD_PREHEAT);
+        selectedHeater->SetPower(Param::GetInt(Param::HeatPwr), Param::GetBool(Param::HeatReq) || opmode == MOD_PREHEAT);
     }
     else
     {

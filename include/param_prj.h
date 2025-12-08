@@ -111,6 +111,7 @@
     PARAM_ENTRY(CAT_HEATER,    Control,     HTCTRL,    0,      2,      0,      58 ) \
     PARAM_ENTRY(CAT_HEATER,    HeatPwr,     "W",       0,      6500,   0,      59 ) \
     PARAM_ENTRY(CAT_HEATER,    HeatPercnt,  "%",       0,      100,    0,      124 ) \
+    PARAM_ENTRY(CAT_HEATER,    PreHeatNow,  ONOFF,     0,      1,    0,        150 ) \
     PARAM_ENTRY(CAT_AIRCON,    Compressor, COMPRESSMODES, 0,  1,      0,      143  ) \
     PARAM_ENTRY(CAT_AIRCON,    AirConCtrl,  ONOFF,     0,      1,      0,      144) \
     PARAM_ENTRY(CAT_CLOCK,     Set_Day,     DOW,       0,      6,      0,      46 ) \
@@ -261,6 +262,7 @@
     VALUE_ENTRY(MG1Raw, "",                         2115 ) \
     VALUE_ENTRY(MG2Raw, "",                         2116 ) \
     VALUE_ENTRY(MG1Raw2,     "",                   2117 ) \
+    VALUE_ENTRY(shouldHeat,  "",                   2118 ) \
 
 //Next value Id: 2110
 
@@ -287,7 +289,7 @@
 #define PLTMODES     "0=Absent, 1=ACStd, 2=ACchg, 3=Error, 4=CCS_Not_Rdy, 5=CCS_Rdy, 6=Static"
 #define VEHMODES     "0=BMW_E46, 1=BMW_E6x+, 2=Classic, 3=None, 5=BMW_E39, 6=VAG, 7=Subaru, 8=BMW_E31"
 #define BMSMODES     "0=Off, 1=SimpBMS, 2=TiDaisychainSingle, 3=TiDaisychainDual, 4=LeafBms, 5=RenaultKangoo33"
-#define OPMODES      "0=Off, 1=Run, 2=Precharge, 3=PchFail, 4=Charge, 5=12VMaintain"
+#define OPMODES      "0=Off, 1=Run, 2=Precharge, 3=PchFail, 4=Charge, 5=12VMaintain, 6=Preheat"
 #define DOW          "0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat"
 #define CHGTYPS      "0=Off, 1=AC, 2=DCFC"
 #define DCDCTYPES    "0=NoDCDC, 1=TeslaG2"

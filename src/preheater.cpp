@@ -50,17 +50,22 @@ void Preheater::Ms10Task() {
 }
 
 void Preheater::Task200Ms(int opmode, unsigned hours, unsigned minutes) {
-  if (Preheater::PreHeatSet ==
-      2) // 0 - Disabled, 1 - Enabled, 2 - Preheat timer
+  if (Preheater::PreHeatSet == 2) // 0 - Disabled, 1 - Enabled, 2 - Preheat timer
   {
     if (opmode != MOD_PREHEAT) {
       if ((PreHeatHrs_tmp == hours) && (PreHeatMins_tmp == minutes) &&
           (PreHeatDur_tmp != 0)) {
         RunPreHeat = true; // if we arrive at set preheat time and duration is
                            // non zero then initiate preheat
-      } else {
+      } else if (!Param::GetBool(Param::PreHeatNow)) {
         RunPreHeat = false;
       }
+      
+      if (Param::GetBool(Param::PreHeatNow)) {
+        RunPreHeat = true; // if we arrive at set preheat time and duration is
+        Param::SetInt(Param::PreHeatNow, 0);
+      }
+
       IOMatrix::GetPin(IOMatrix::PREHEATOUT)->Clear();
     }
 

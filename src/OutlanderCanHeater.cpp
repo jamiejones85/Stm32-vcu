@@ -36,6 +36,7 @@ void OutlanderCanHeater::SetCanInterface(CanHardware* c)
 
 void OutlanderCanHeater::Task100Ms()
 {
+    Param::SetInt(Param::shouldHeat, shouldHeat);
     if (shouldHeat)
     {
         uint8_t bytes[8];
