@@ -795,6 +795,11 @@ static void Ms10Task(void)
             maintainer12V.CancelMaintainer();
         }
 
+        if(chargeMode)
+        {
+            maintainer12V.CancelMaintainer();
+        }
+
         break;
     case MOD_PREHEAT:
         if (rlyDly != 0)

@@ -470,6 +470,12 @@ void GS450HClass::CalcHTMChecksum(uint16_t len)
 
 void GS450HClass::Task1Ms()
 {
+    // Update debug parameters
+    Param::SetInt(Param::DMA_RxComplete, rx_complete_flag ? 1 : 0);
+    Param::SetInt(Param::DMA_TxComplete, tx_complete_flag ? 1 : 0);
+    Param::SetInt(Param::DMA_RxTimeout, rx_timeout);
+    Param::SetInt(Param::DMA_ConsecFail, consecutive_failures);
+    Param::SetInt(Param::HTM_State, htm_state);
 
     switch(htm_state)
     {
@@ -484,6 +490,13 @@ void GS450HClass::Task1Ms()
     case 1:
         DigIo::req_out.Set();  //HAL_GPIO_WritePin(HTM_SYNC_GPIO_Port, HTM_SYNC_Pin, 1);
 
+        // Wait for next TIM2 update event (start of new clock period = rising edge)
+        while (!(TIM_SR(TIM2) & TIM_SR_UIF)) {
+            // Wait for TIM2 update flag - indicates start of new CLK period
+        }
+        TIM_SR(TIM2) &= ~TIM_SR_UIF;  // Clear the flag
+
+        // Now start DMA synchronized to the rising edge of CLK
         // Only transmit if previous TX completed (checked via flag or channel not busy)
         if(inv_status==0)
         {
@@ -530,7 +543,7 @@ void GS450HClass::Task1Ms()
                 //exchange data and prepare next HTM frame using processing buffer
                 consecutive_failures = 0;
                 statusInv=1;
-                dc_bus_voltage=(((processing_rx_buffer[82]|processing_rx_buffer[83]<<8)-5)/2);
+                dc_bus_voltage=((processing_rx_buffer[84]|processing_rx_buffer[85]<<8)/2);
                 temp_inv_water=int8_t(processing_rx_buffer[42]);
                 temp_inv_inductor=int8_t(processing_rx_buffer[86]);
                 mg1_speed=processing_rx_buffer[6]|processing_rx_buffer[7]<<8;
@@ -614,24 +627,35 @@ void GS450HClass::Task1Ms()
 
     /***** Demo code for Gen3 Prius/Auris direct communications! */
     case 5:
-        dma_read(mth_data,120);//read in mth data via dma. Probably need some kind of check dma complete flag here
+        // Start DMA read using double buffer - DMA writes to active_rx_buffer, we process from processing_rx_buffer
+        rx_complete_flag = false;
+        rx_timeout = 0;
+        dma_read(active_rx_buffer,120);
         DigIo::req_out.Clear(); //HAL_GPIO_WritePin(HTM_SYNC_GPIO_Port, HTM_SYNC_Pin, 0);
         htm_state++;
         break;
     case 6:
         DigIo::req_out.Set();  //HAL_GPIO_WritePin(HTM_SYNC_GPIO_Port, HTM_SYNC_Pin, 1);
 
+        // Wait for next TIM2 update event (start of new clock period = rising edge)
+        while (!(TIM_SR(TIM2) & TIM_SR_UIF)) {
+            // Wait for TIM2 update flag - indicates start of new CLK period
+        }
+        TIM_SR(TIM2) &= ~TIM_SR_UIF;  // Clear the flag
+
+        // Now start DMA synchronized to the rising edge of CLK
         if(inv_status>5)
         {
-            if (dma_get_interrupt_flag(DMA1, DMA_CHANNEL7, DMA_TCIF))// if the transfer complete flag is set then send another packet
+            if (tx_complete_flag || !dma_channel_is_enabled(DMA1, DMA_CHANNEL7))
             {
-                dma_clear_interrupt_flags(DMA1, DMA_CHANNEL7, DMA_TCIF);//clear the flag.
-                dma_write(htm_data,100); //HAL_UART_Transmit_IT(&huart2, htm_data, 80);
+                tx_complete_flag = false;
+                dma_write(htm_data,100);
             }
         }
         else
         {
-            dma_write(&htm_data_init[inv_status][0],100); //HAL_UART_Transmit_IT(&huart2, htm_data_setup, 80);
+            tx_complete_flag = false;
+            dma_write(&htm_data_init[inv_status][0],100);
 
             inv_status++;
             if(inv_status==6)
@@ -642,36 +666,55 @@ void GS450HClass::Task1Ms()
         htm_state++;
         break;
     case 7:
-        htm_state++;
+        // Add delay to give inverter time to process the command
+        inverter_delay_counter++;
+        if(inverter_delay_counter >= INVERTER_PROCESSING_TIME_MS) {
+            inverter_delay_counter = 0;
+            htm_state++;
+        }
         break;
     case 8:
-        if(VerifyMTHChecksum(120)==0 || dma_get_interrupt_flag(DMA1, DMA_CHANNEL6, DMA_TCIF)==0)
-        {
+        // Wait for RX completion with timeout
+        if(rx_complete_flag) {
+            rx_complete_flag = false;
+            // Check buffer integrity - processing_rx_buffer was swapped by ISR
+            if(VerifyMTHChecksum(120)==0 && VerifyMTHChecksumNew(processing_rx_buffer, 120)==0)
+            {
+                consecutive_failures++;
+                if(consecutive_failures > MAX_FAILURES) {
+                    statusInv=0;
+                    mg1_speed=0;
+                    mg2_speed=0;
+                    Param::SetInt(Param::cruisespeed, 0);
+                }
+            }
+            else
+            {
+                //exchange data and prepare next HTM frame using processing buffer
+                consecutive_failures = 0;
+                statusInv=1;
+                dc_bus_voltage=(((processing_rx_buffer[100]|processing_rx_buffer[101]<<8)-5)/2);
+                temp_inv_water=int8_t(processing_rx_buffer[20]);//from 300h
+                temp_inv_inductor=(processing_rx_buffer[86]|processing_rx_buffer[87]<<8);
+                mg1_speed=processing_rx_buffer[6]|processing_rx_buffer[7]<<8;
+                mg2_speed=processing_rx_buffer[38]|processing_rx_buffer[39]<<8;
 
-            statusInv=0;
-            //set speeds to 0 to prevent dynamic throttle/regen issues
-            mg1_speed=0;
-            mg2_speed=0;
-            //disable cruise
-            Param::SetInt(Param::cruisespeed, 0);
+                // Copy to mth_data for compatibility with existing code
+                for(int i=0; i<120; i++) mth_data[i] = processing_rx_buffer[i];
+            }
+            htm_state++;
+        } else {
+            // Handle timeout
+            rx_timeout++;
+            if(rx_timeout > RX_TIMEOUT_MS) {
+                consecutive_failures++;
+                statusInv=0;
+                mg1_speed=0;
+                mg2_speed=0;
+                Param::SetInt(Param::cruisespeed, 0);
+                htm_state++; // Move on despite timeout
+            }
         }
-        else
-        {
-
-            //exchange data and prepare next HTM frame
-            dma_clear_interrupt_flags(DMA1, DMA_CHANNEL6, DMA_TCIF);
-            statusInv=1;
-            dc_bus_voltage=(((mth_data[100]|mth_data[101]<<8)-5)/2);
-            temp_inv_water=int8_t(mth_data[20]);//from 300h
-            temp_inv_inductor=(mth_data[86]|mth_data[87]<<8);
-            mg1_speed=mth_data[6]|mth_data[7]<<8;
-            mg2_speed=mth_data[38]|mth_data[39]<<8;
-        }
-
-        mth_data[98]=0;
-        mth_data[99]=0;
-
-        htm_state++;
         break;
     case 9:
         Param::SetInt(Param::torque,mg2_torque);//post processed final torue value sent to inv to web interface
@@ -756,23 +799,35 @@ void GS450HClass::Task1Ms()
     /***** Code for Lexus GS300H */
     case 10:
         if (Param::GetInt(Param::opmode) != MOD_RUN) inv_status = 0;
-        dma_read(mth_data,140);//read in mth data via dma.
+        // Start DMA read using double buffer - DMA writes to active_rx_buffer, we process from processing_rx_buffer
+        rx_complete_flag = false;
+        rx_timeout = 0;
+        dma_read(active_rx_buffer,140);
         DigIo::req_out.Clear(); //HAL_GPIO_WritePin(HTM_SYNC_GPIO_Port, HTM_SYNC_Pin, 0);
         htm_state++;
         break;
     case 11:
         DigIo::req_out.Set();  //HAL_GPIO_WritePin(HTM_SYNC_GPIO_Port, HTM_SYNC_Pin, 1);
+
+        // Wait for next TIM2 update event (start of new clock period = rising edge)
+        while (!(TIM_SR(TIM2) & TIM_SR_UIF)) {
+            // Wait for TIM2 update flag - indicates start of new CLK period
+        }
+        TIM_SR(TIM2) &= ~TIM_SR_UIF;  // Clear the flag
+
+        // Now start DMA synchronized to the rising edge of CLK
         if(inv_status>6)
         {
-            if (dma_get_interrupt_flag(DMA1, DMA_CHANNEL7, DMA_TCIF))// if the transfer complete flag is set then send another packet
+            if (tx_complete_flag || !dma_channel_is_enabled(DMA1, DMA_CHANNEL7))
             {
-                dma_clear_interrupt_flags(DMA1, DMA_CHANNEL7, DMA_TCIF);//clear the flag.
-                dma_write(htm_data,105); //HAL_UART_Transmit_IT(&huart2, htm_data, 80);
+                tx_complete_flag = false;
+                dma_write(htm_data,105);
             }
         }
         else
         {
-            dma_write(&htm_data_Init_GS300H[ inv_status ][0],105); //HAL_UART_Transmit_IT(&huart2, htm_data_setup, 80);
+            tx_complete_flag = false;
+            dma_write(&htm_data_Init_GS300H[ inv_status ][0],105);
 
             inv_status++;
 
@@ -780,40 +835,51 @@ void GS450HClass::Task1Ms()
         htm_state++;
         break;
     case 12:
-        htm_state++;
+        // Add delay to give inverter time to process the command
+        inverter_delay_counter++;
+        if(inverter_delay_counter >= INVERTER_PROCESSING_TIME_MS) {
+            inverter_delay_counter = 0;
+            htm_state++;
+        }
         break;
     case 13:
-        if(VerifyMTHChecksum(140)==0 || dma_get_interrupt_flag(DMA1, DMA_CHANNEL6, DMA_TCIF)==0)
-        {
+        // Wait for RX completion with timeout
+        if(rx_complete_flag) {
+            rx_complete_flag = false;
+            // Check buffer integrity - processing_rx_buffer was swapped by ISR
+            if(VerifyMTHChecksum(140)==0 && VerifyMTHChecksumNew(processing_rx_buffer, 140)==0)
+            {
+                consecutive_failures++;
+                if(consecutive_failures > MAX_FAILURES) {
+                    statusInv=0;
+                    // Optionally reset inv_status if needed
+                    // inv_status=0;
+                }
+            }
+            else
+            {
+                //exchange data and prepare next HTM frame using processing buffer
+                consecutive_failures = 0;
+                statusInv=1;
+                dc_bus_voltage=(((processing_rx_buffer[117]|processing_rx_buffer[118]<<8))/2);
+                temp_inv_water=int8_t(processing_rx_buffer[20]);
+                temp_inv_inductor=(processing_rx_buffer[25]|processing_rx_buffer[26]<<8);
+                mg1_speed=processing_rx_buffer[10]|processing_rx_buffer[11]<<8;
+                mg2_speed=processing_rx_buffer[43]|processing_rx_buffer[44]<<8;
 
-            statusInv=0;
-            //inv_status=0; Stop reinit of inverter
-            /* PART OF 2.20A Changes that stopped working
-            //inv_status=0; Stop reinit of inverter
-            //set speeds to 0 to prevent dynamic throttle/regen issues
-            mg1_speed=0;
-            mg2_speed=0;
-            //disable cruise
-            Param::SetInt(Param::cruisespeed, 0);
-            */
+                // Copy to mth_data for compatibility with existing code
+                for(int i=0; i<140; i++) mth_data[i] = processing_rx_buffer[i];
+            }
+            htm_state++;
+        } else {
+            // Handle timeout
+            rx_timeout++;
+            if(rx_timeout > RX_TIMEOUT_MS) {
+                consecutive_failures++;
+                statusInv=0;
+                htm_state++; // Move on despite timeout
+            }
         }
-        else
-        {
-
-            //exchange data and prepare next HTM frame
-            dma_clear_interrupt_flags(DMA1, DMA_CHANNEL6, DMA_TCIF);
-            statusInv=1;
-            dc_bus_voltage=(((mth_data[117]|mth_data[118]<<8))/2);
-            temp_inv_water=int8_t(mth_data[20]);
-            temp_inv_inductor=(mth_data[25]|mth_data[26]<<8);
-            mg1_speed=mth_data[10]|mth_data[11]<<8;
-            mg2_speed=mth_data[43]|mth_data[44]<<8;
-        }
-
-        // mth_data[98]=0;
-        // mth_data[99]=0;
-
-        htm_state++;
         break;
     case 14:
         Param::SetInt(Param::torque,mg2_torque);//post processed final torue value sent to inv to web interface

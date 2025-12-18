@@ -263,8 +263,13 @@
     VALUE_ENTRY(MG2Raw, "",                         2116 ) \
     VALUE_ENTRY(MG1Raw2,     "",                   2117 ) \
     VALUE_ENTRY(shouldHeat,  "",                   2118 ) \
+    VALUE_ENTRY(DMA_RxComplete, ONOFF,             2119 ) \
+    VALUE_ENTRY(DMA_TxComplete, ONOFF,             2120 ) \
+    VALUE_ENTRY(DMA_RxTimeout,  "",                2121 ) \
+    VALUE_ENTRY(DMA_ConsecFail, "",                2122 ) \
+    VALUE_ENTRY(HTM_State,      "",                2123 ) \
 
-//Next value Id: 2110
+//Next value Id: 2124
 
 //Dead params
 /*
