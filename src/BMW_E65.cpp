@@ -47,6 +47,7 @@ void BMW_E65::SetCanInterface(CanHardware* c)
     can->RegisterUserMessage(0x2FC);//E90 Enclosure status
     can->RegisterUserMessage(0x480);//Network Management
     can->RegisterUserMessage(0x1A0);//Speed
+
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////Handle incomming pt can messages from the car here
@@ -128,12 +129,14 @@ void BMW_E65::handle130(uint32_t data[2])
     }
 }
 
+
 void BMW_E65::handle1A0(uint32_t data[2])
 {
     uint8_t* bytes = (uint8_t*)data;
 
     float kph = (bytes[0] + uint16_t((bytes[1]&0x0F)<<8)) * 0.1;
     Param::SetFloat(Param::Veh_Speed, kph * 0.621371f);
+
 }
 
 void BMW_E65::handle2FC(uint32_t data[2])

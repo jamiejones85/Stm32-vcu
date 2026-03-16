@@ -80,6 +80,7 @@
     PARAM_ENTRY(CAT_THROTTLE,  throtrpmfilt,   "rpm/10ms",  0.1,    200,    15,    131 ) \
     PARAM_ENTRY(CAT_LEXUS,     Gear,        LOWHIGH,   0,      3,      0,      27 ) \
     PARAM_ENTRY(CAT_LEXUS,     OilPump,     "%",       0,      100,    50,     28 ) \
+    PARAM_ENTRY(CAT_LEXUS,     MTHCOMM,     ONOFF,     0,      1,      1,     151 ) \
     PARAM_ENTRY(CAT_CRUISE,    cruisestep,  "rpm",     1,      1000,   200,    29 ) \
     PARAM_ENTRY(CAT_CRUISE,    cruiseramp,  "rpm/100ms",1,     1000,   20,     30 ) \
     PARAM_ENTRY(CAT_CRUISE,    regenlevel,  "",        0,      3,      2,      31 ) \
@@ -263,11 +264,9 @@
     VALUE_ENTRY(MG2Raw, "",                         2116 ) \
     VALUE_ENTRY(MG1Raw2,     "",                   2117 ) \
     VALUE_ENTRY(shouldHeat,  "",                   2118 ) \
-    VALUE_ENTRY(DMA_RxComplete, ONOFF,             2119 ) \
-    VALUE_ENTRY(DMA_TxComplete, ONOFF,             2120 ) \
-    VALUE_ENTRY(DMA_RxTimeout,  "",                2121 ) \
-    VALUE_ENTRY(DMA_ConsecFail, "",                2122 ) \
-    VALUE_ENTRY(HTM_State,      "",                2123 ) \
+    VALUE_ENTRY(fanSpeed,    "",                   2119 ) \
+    VALUE_ENTRY(temperatureDial,    "",            2120 ) \
+
 
 //Next value Id: 2124
 

@@ -470,13 +470,6 @@ void GS450HClass::CalcHTMChecksum(uint16_t len)
 
 void GS450HClass::Task1Ms()
 {
-    // Update debug parameters
-    Param::SetInt(Param::DMA_RxComplete, rx_complete_flag ? 1 : 0);
-    Param::SetInt(Param::DMA_TxComplete, tx_complete_flag ? 1 : 0);
-    Param::SetInt(Param::DMA_RxTimeout, rx_timeout);
-    Param::SetInt(Param::DMA_ConsecFail, consecutive_failures);
-    Param::SetInt(Param::HTM_State, htm_state);
-
     switch(htm_state)
     {
     case 0:
@@ -546,8 +539,23 @@ void GS450HClass::Task1Ms()
                 dc_bus_voltage=((processing_rx_buffer[84]|processing_rx_buffer[85]<<8)/2);
                 temp_inv_water=int8_t(processing_rx_buffer[42]);
                 temp_inv_inductor=int8_t(processing_rx_buffer[86]);
-                mg1_speed=processing_rx_buffer[6]|processing_rx_buffer[7]<<8;
-                mg2_speed=processing_rx_buffer[31]|processing_rx_buffer[32]<<8;
+
+                int16_t mg1_speedTemp = processing_rx_buffer[6]|processing_rx_buffer[7]<<8;
+                int16_t mg2_speedTemp = processing_rx_buffer[31]|processing_rx_buffer[32]<<8;
+
+                if (Param::GetInt(Param::MTHCOMM) == 1) {
+                    mg1_speed = mg1_speedTemp;
+                    mg2_speed = mg2_speedTemp;
+                } else {
+                    if (mg2_speedTemp > 750) {
+                        mg1_speed = mg1_speedTemp;
+                        mg2_speed = mg2_speedTemp;
+                    } else {
+                        mg1_speed=0;
+                        mg2_speed=0;
+                    }
+                }
+
 
                 // Copy to mth_data for compatibility with existing code
                 for(int i=0; i<100; i++) mth_data[i] = processing_rx_buffer[i];
@@ -574,7 +582,8 @@ void GS450HClass::Task1Ms()
         speedSum/=113;
         speedSum2=speedSum;
 
-        htm_data[0]=speedSum2;
+        // htm_data[0]=speedSum2;
+        htm_data[0]=0;
         htm_data[75]=(mg1_torque*4) & 0xFF;
         htm_data[76]=((mg1_torque*4)>>8) & 0xFF;
 

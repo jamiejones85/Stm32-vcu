@@ -104,7 +104,7 @@ void Maintainer12V::Task200Ms(int opmode) {
 void Maintainer12V::CancelMaintainer() {
   maintainDur_tmp = 0;
   maintainTicks = 0;
-  
+  minsUntilAllowedAgain = WAKEUP_BLOCK_MINS;
 }
 
 
