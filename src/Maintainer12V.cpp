@@ -54,7 +54,7 @@ void Maintainer12V::Ms10Task() {
 void Maintainer12V::Task200Ms(int opmode) {
     Param::SetInt(Param::minsUntilAllowedAgain, minsUntilAllowedAgain);
 
-    if (opmode != MOD_MAINTAIN) {
+    if (opmode == MOD_OFF) {
       //reset every minute
       if (minsUntilAllowedAgain > 0) {
         minsUntilAllowedAgainTicks++;

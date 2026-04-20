@@ -703,6 +703,7 @@ static void Ms10Task(void)
             {
                 opmode = MOD_RUN;
                 StartSig=false;//reset for next time
+                maintainer12V.CancelMaintainer();//cancel maintainer when entering RUN mode
                 rlyDly=25;//Recharge sequence timer
                 Param::SetInt(Param::TorqDerate,0);//clear torque derate reason
             }

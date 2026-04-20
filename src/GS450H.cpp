@@ -547,13 +547,15 @@ void GS450HClass::Task1Ms()
                     mg1_speed = mg1_speedTemp;
                     mg2_speed = mg2_speedTemp;
                 } else {
-                    if (mg2_speedTemp > 750) {
-                        mg1_speed = mg1_speedTemp;
-                        mg2_speed = mg2_speedTemp;
-                    } else {
+                    //create a dead zone in the rpm
+                    // if ((mg2_speedTemp > 800 && mg2_speedTemp > 0) || (mg1_speedTemp < -800 && mg2_speedTemp < 0)) {
+                    //     mg1_speed = mg1_speedTemp;
+                    //     mg2_speed = mg2_speedTemp;
+                    // } else {
                         mg1_speed=0;
                         mg2_speed=0;
-                    }
+                        statusInv=0;
+                    // }
                 }
 
 
