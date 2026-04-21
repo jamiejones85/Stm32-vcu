@@ -106,6 +106,7 @@
 #include "vehicle.h"
 #include <libopencm3/stm32/can.h>
 #include <libopencm3/stm32/exti.h>
+#include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/iwdg.h>
 #include <libopencm3/stm32/rtc.h>
 #include <libopencm3/stm32/spi.h>
@@ -146,6 +147,7 @@ static bool OutlanderCAN = false;
 static bool ExtHVreq = false;
 static bool CheckHVIL = 0;
 static bool HVILok = 0;
+static uint32_t sleepTimer = 0; // Sleep timer in 200ms ticks (600 ticks = 2 minutes)
 
 static volatile unsigned days = 0, hours = 0, minutes = 0, seconds = 0,
                          alarm = 0; // != 0 when alarm is pending
@@ -376,6 +378,20 @@ static void Ms200Task(void) {
 
   maintainer12V.Task200Ms(opmode);
   preheater.Task200Ms(opmode, hours, minutes);
+
+  // Sleep feature: countdown timer in MOD_OFF
+  if (opmode == MOD_OFF && Param::GetBool(Param::enableSleep)) {
+    if (sleepTimer > 0) {
+      sleepTimer--;
+    }
+    if (sleepTimer == 0) {
+      // Enter sleep mode by setting PE0 low
+      gpio_clear(GPIOE, GPIO0);
+    }
+  } else {
+    // Reset sleep timer when not in MOD_OFF or sleep is disabled
+    sleepTimer = 600; // 2 minutes = 120 seconds = 600 * 200ms ticks
+  }
 }
 
 static void Ms100Task(void) {

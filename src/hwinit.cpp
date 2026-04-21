@@ -55,6 +55,12 @@ void clock_setup(void) {
   rcc_periph_clock_enable(RCC_GPIOC);
   rcc_periph_clock_enable(RCC_GPIOD);
   rcc_periph_clock_enable(RCC_GPIOE);
+
+  // Configure PE0 as output for power supply control
+  // Set it high to keep the power supply awake
+  gpio_set_mode(GPIOE, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, GPIO0);
+  gpio_set(GPIOE, GPIO0);  // Keep power on
+
   rcc_periph_clock_enable(RCC_USART3);
   rcc_periph_clock_enable(RCC_USART2); // GS450H Inverter Comms
   rcc_periph_clock_enable(RCC_USART1); // LIN Comms
