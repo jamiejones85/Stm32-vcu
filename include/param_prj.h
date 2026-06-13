@@ -19,7 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define VER 2.30.A
+#define VER 2.30.E
 
 
 /* Entries must be ordered as follows:
@@ -27,7 +27,7 @@
    2. Temporary parameters (id = 0)
    3. Display values
  */
-//Next param id (increase when adding new parameter!): 139
+//Next param id (increase when adding new parameter!): 166
 /*              category     name         unit       min     max     default id */
 #define PARAM_LIST \
     PARAM_ENTRY(CAT_SETUP,     Inverter,     INVMODES, 0,      8,      0,      5  ) \
@@ -50,6 +50,7 @@
     PARAM_ENTRY(CAT_SETUP,     HeaterCan,    CAN_DEV,  0,      1,      1,      138 ) \
     PARAM_ENTRY(CAT_SETUP,     CompressorCan,CAN_DEV,  0,      1,      0,      139 ) \
     PARAM_ENTRY(CAT_SETUP,     MotActive,    MotorsAct,0,      3,      0,      129 ) \
+    PARAM_ENTRY(CAT_SETUP,     RESETONOFF,   ONOFF,   0,      1,   0,  153 ) \
     PARAM_ENTRY(CAT_THROTTLE,  potmin,      "dig",     0,      4095,   0,      7  ) \
     PARAM_ENTRY(CAT_THROTTLE,  potmax,      "dig",     0,      4095,   4095,   8  ) \
     PARAM_ENTRY(CAT_THROTTLE,  pot2min,     "dig",     0,      4095,   4095,   9  ) \
@@ -77,10 +78,13 @@
     PARAM_ENTRY(CAT_THROTTLE,  throtmaxRev,    "%",       0,      100,    30,    123 ) \
     PARAM_ENTRY(CAT_THROTTLE,  throtdead,   "%",       0,      50,     10,     76 ) \
     PARAM_ENTRY(CAT_THROTTLE,  RegenBrakeLight,   "%",    -100,     0,     -15,      128 ) \
+    PARAM_ENTRY(CAT_THROTTLE,  potlinearity,   "%",       0,      100,    100,    162 ) \
     PARAM_ENTRY(CAT_THROTTLE,  throtrpmfilt,   "rpm/10ms",  0.1,    200,    15,    131 ) \
     PARAM_ENTRY(CAT_LEXUS,     Gear,        LOWHIGH,   0,      3,      0,      27 ) \
     PARAM_ENTRY(CAT_LEXUS,     OilPump,     "%",       0,      100,    50,     28 ) \
     PARAM_ENTRY(CAT_LEXUS,     MTHCOMM,     ONOFF,     0,      1,      1,     151 ) \
+    PARAM_ENTRY(CAT_LEXUS,     MG1SPDOFFSET,     "",   -1000,      1000,   0,  152 ) \
+    PARAM_ENTRY(CAT_LEXUS,     toyotaReset, ONOFF,     0,      1,      0,     165 ) \
     PARAM_ENTRY(CAT_CRUISE,    cruisestep,  "rpm",     1,      1000,   200,    29 ) \
     PARAM_ENTRY(CAT_CRUISE,    cruiseramp,  "rpm/100ms",1,     1000,   20,     30 ) \
     PARAM_ENTRY(CAT_CRUISE,    regenlevel,  "",        0,      3,      2,      31 ) \
@@ -113,8 +117,10 @@
     PARAM_ENTRY(CAT_HEATER,    HeatPwr,     "W",       0,      6500,   0,      59 ) \
     PARAM_ENTRY(CAT_HEATER,    HeatPercnt,  "%",       0,      100,    0,      124 ) \
     PARAM_ENTRY(CAT_HEATER,    PreHeatNow,  ONOFF,     0,      1,    0,        150 ) \
+    PARAM_ENTRY(CAT_HEATER,    HeatReq,     ONOFF,     0,      1,      0,      155 ) \
     PARAM_ENTRY(CAT_AIRCON,    Compressor, COMPRESSMODES, 0,  1,      0,      143  ) \
     PARAM_ENTRY(CAT_AIRCON,    AirConCtrl,  ONOFF,     0,      1,      0,      144) \
+    PARAM_ENTRY(CAT_AIRCON,    fanPWMDuty,  "%",       0,      100,    0,      154) \
     PARAM_ENTRY(CAT_CLOCK,     Set_Day,     DOW,       0,      6,      0,      46 ) \
     PARAM_ENTRY(CAT_CLOCK,     Set_Hour,    "Hours",   0,      23,     0,      47 ) \
     PARAM_ENTRY(CAT_CLOCK,     Set_Min,     "Mins",    0,      59,     0,      48 ) \
@@ -131,9 +137,9 @@
     PARAM_ENTRY(CAT_IOPINS,    Out3Func,    PINFUNCS,  0,      16,     3,      82 ) \
     PARAM_ENTRY(CAT_IOPINS,    SL1Func,     PINFUNCS,  0,      16,     0,      83 ) \
     PARAM_ENTRY(CAT_IOPINS,    SL2Func,     PINFUNCS,  0,      16,     0,      84 ) \
-    PARAM_ENTRY(CAT_IOPINS,    PWM1Func,    PINFUNCS,  0,      19,     0,      85 ) \
-    PARAM_ENTRY(CAT_IOPINS,    PWM2Func,    PINFUNCS,  0,      19,     4,      86 ) \
-    PARAM_ENTRY(CAT_IOPINS,    PWM3Func,    PINFUNCS,  0,      19,     2,      87 ) \
+    PARAM_ENTRY(CAT_IOPINS,    PWM1Func,    PINFUNCS,  0,      21,     0,      85 ) \
+    PARAM_ENTRY(CAT_IOPINS,    PWM2Func,    PINFUNCS,  0,      21,     4,      86 ) \
+    PARAM_ENTRY(CAT_IOPINS,    PWM3Func,    PINFUNCS,  0,      21,     2,      87 ) \
     PARAM_ENTRY(CAT_IOPINS,    GP12VInFunc, PINFUNCS,  0,      13,     12,     98 ) \
     PARAM_ENTRY(CAT_IOPINS,    HVReqFunc,   PINFUNCS,  0,      13,     12,     99 ) \
     PARAM_ENTRY(CAT_IOPINS,    PB1InFunc,   PINFUNCS,  0,      13,     12,     140 ) \
@@ -239,7 +245,6 @@
     VALUE_ENTRY(Min,           "M",                 2066 ) \
     VALUE_ENTRY(Sec,           "S",                 2067 ) \
     VALUE_ENTRY(ChgT,          "M",                 2090 ) \
-    VALUE_ENTRY(HeatReq,       ONOFF,               2069 ) \
     VALUE_ENTRY(U12V,          "V",                 2070 ) \
     VALUE_ENTRY(I12V,          "A",                 2083 ) \
     VALUE_ENTRY(ChgTemp,       "°C",                2078 ) \
@@ -259,7 +264,7 @@
     VALUE_ENTRY(maintainWakeups,"",                 2111 ) \
     VALUE_ENTRY(minsUntilAllowedAgain,"",           2112 ) \
     VALUE_ENTRY(MG1Torque,"",                       2113 ) \
-    VALUE_ENTRY(MG2Torque,"",                       2114 ) \
+    VALUE_ENTRY(MG1Speed,"",                       2114 ) \
     VALUE_ENTRY(MG1Raw, "",                         2115 ) \
     VALUE_ENTRY(MG2Raw, "",                         2116 ) \
     VALUE_ENTRY(MG1Raw2,     "",                   2117 ) \
@@ -268,7 +273,7 @@
     VALUE_ENTRY(temperatureDial,    "",            2120 ) \
 
 
-//Next value Id: 2124
+//Next value Id: 2121
 
 //Dead params
 /*
@@ -281,7 +286,7 @@
 #define PINFUNCS     "0=None, 1=ChaDeMoAlw, 2=OBCEnable, 3=HeaterEnable, 4=RunIndication, 5=WarnIndication," \
                      "6=CoolantPump, 7=NegContactor, 8=BrakeLight, 9=ReverseLight, 10=HeatReq, 11=HVRequest," \
                      "12=DCFCRequest, 13=CompressorRequest, 14=BrakeVacPump, 15=CoolingFan, 16=HvActive, 17=PreHeatOut, 18=PwmTim3, 19=CpSpoof,"\
-                     "20=GS450pump"
+                     "20=GS450pump, 21=fanPWM"
 #define APINFUNCS    "0=None, 1=ProxPilot, 2=BrakeVacSensor"
 #define SHIFTERS     "0=None, 1=BMW_F30, 2=JLR_G1, 3=JLR_G2, 4=BMW_E65"
 #define SHNTYPE      "0=None, 1=ISA, 2=SBOX, 3=VAG"

@@ -46,7 +46,7 @@ OBJSL		= $(BINARY).o hwinit.o stm32scheduler.o params.o terminal.o terminal_prj.
            CPC.o ElconCharger.o RearOutlanderinverter.o linbus.o VWheater.o JLR_G1.o JLR_G2.o Foccci.o digipot.o\
 		   OutlanderHeartBeat.o E65_Lever.o leafbms.o V_Classic.o kangoobms.o OutlanderCanHeater.o NissLeafMng.o\
 		   OutlanderCompressor.o Maintainer12V.o MGgen2V2Lcharger.o preheater.o
-           
+
 OBJS     = $(patsubst %.o,$(OUT_DIR)/%.o, $(OBJSL))
 vpath %.c src/ libopeninv/src/
 vpath %.cpp src/ libopeninv/src/

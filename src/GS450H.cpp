@@ -203,7 +203,7 @@ void GS450HClass::SetTorque(float torquePercent)
 
         if(MotorActive == 0) //Both motors
         {
-            if (scaledTorqueTarget < 0) mg1_torque = 0;
+            if (scaledTorqueTarget <= 0) mg1_torque = 0;
         }
         else if(MotorActive == 1)//Only Mg1 active
         {
@@ -221,6 +221,9 @@ void GS450HClass::SetTorque(float torquePercent)
                 mg1_torque = utils::change(torquePercent,50,100,0,4375);
             }
         }
+
+        int16_t offset = Param::GetInt(Param::MG1SPDOFFSET);
+        mg2_torque = mg2_torque + offset;
     }
     else if(DriveType == PRIUS)
     {
@@ -389,6 +392,28 @@ void GS450HClass::GS450Houtput()//!!! should be ran every 10ms
     if (Param::GetInt(Param::opmode) == MOD_OFF)
     {
         utils::GS450hOilPump(0);
+
+        //reset state
+        if (Param::GetInt(Param::toyotaReset) == 1)
+        {
+            switch (DriveType)
+            {
+            case GS450H:
+                htm_state = 0;
+                inv_status = 1;//must be 1 for gs450h
+                break;
+            case PRIUS:
+                htm_state = 5;
+                inv_status = 0;//must be 0 for prius
+                break;
+            case IS300H:
+                htm_state = 10;
+                inv_status = 0;//must be 0 for gs300h
+                break;
+            default:
+                break;
+            }
+        }
     }
 
     if (Param::GetInt(Param::opmode) == MOD_RUN)
@@ -473,6 +498,7 @@ void GS450HClass::Task1Ms()
     switch(htm_state)
     {
     case 0:
+        if (Param::GetInt(Param::opmode) != MOD_RUN) inv_status = 1; // GS450H uses 1, not 0
         // Start DMA read using double buffer - DMA writes to active_rx_buffer, we process from processing_rx_buffer
         rx_complete_flag = false;
         rx_timeout = 0;
@@ -545,6 +571,8 @@ void GS450HClass::Task1Ms()
 
                 if (Param::GetInt(Param::MTHCOMM) == 1) {
                     mg1_speed = mg1_speedTemp;
+                    Param::SetInt(Param::MG1Speed, mg1_speed);//post processed final torue value sent to inv to web interface
+
                     mg2_speed = mg2_speedTemp;
                 } else {
                     //create a dead zone in the rpm
@@ -894,6 +922,7 @@ void GS450HClass::Task1Ms()
         break;
     case 14:
         Param::SetInt(Param::torque,mg2_torque);//post processed final torue value sent to inv to web interface
+        Param::SetInt(Param::MG1Speed, mg1_speed);//post processed final torue value sent to inv to web interface
 
         //speed feedback
         speedSum=mg2_speed+mg1_speed;

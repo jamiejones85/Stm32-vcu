@@ -29,6 +29,7 @@
 #include <libopencm3/stm32/iwdg.h>
 #include <libopencm3/stm32/spi.h>
 #include <libopencm3/stm32/exti.h>
+#include <libopencm3/cm3/scb.h>
 #include "stm32_can.h"
 #include "terminal.h"
 #include "params.h"
@@ -139,7 +140,7 @@ static bool ACrequest=false;
 static bool initbyStart=false;
 static bool initbyCharge=false;
 static bool OutlanderCAN=false;
-
+static bool hasRestart=true; //set to true, well set to false in MOD_RUN
 static uint8_t acOffCount = 10; //compressor input could be PWM, keep on until 10 off signals
 
 static volatile unsigned
@@ -208,6 +209,7 @@ static Compressor* selectedCompressor = &CompressorNone;
 static Maintainer12V maintainer12V;
 static MGgen2V2Lcharger MGgen2v2l;
 static Preheater preheater;
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 static void Ms200Task(void)
@@ -323,7 +325,7 @@ static void Ms200Task(void)
     if(opmode==MOD_RUN)
     {
         ChgLck=false;//reset charge lockout flag when we drive off
-
+        hasRestart = false;
         selectedCompressor->Task200Ms();
 
         //Brake Vac Sensor
@@ -381,6 +383,7 @@ static void Ms100Task(void)
     Param::SetFloat(Param::cpuload, cpuLoad);
     Param::SetInt(Param::lasterr, ErrorMessage::GetLastError());
     int opmode = Param::GetInt(Param::opmode);
+
     utils::SelectDirection(selectedVehicle, selectedShifter);
 
     if(Param::GetInt(Param::ShuntType) != 0)//Do not do any SOC calcs
@@ -554,23 +557,23 @@ static void Ms10Task(void)
         //in the same direction as the selected gear, we will actually accelerate!
         //Exclude openinverter here because that has its own regen logic
 
-        if (torquePercent < 0 && Param::GetInt(Param::Inverter) != InvModes::OpenI)
-        {
-            if(Param::GetInt(Param::reversemotor) == 0)
-            {
-                rollingDirection = previousSpeed >= 0 ? 1 : -1;
-            }
-            else
-            {
-                rollingDirection = previousSpeed >= 0 ? -1 : 1;
-            }
-            //When rolling backward while in forward gear, apply POSITIVE torque to slow down backward motion
-            //Vice versa when in reverse gear and rolling forward.
-            if (rollingDirection != requestedDirection)
-            {
-                torquePercent = -torquePercent;
-            }
-        }
+        // if (torquePercent < 0 && Param::GetInt(Param::Inverter) != InvModes::OpenI)
+        // {
+        //     if(Param::GetInt(Param::reversemotor) == 0)
+        //     {
+        //         rollingDirection = previousSpeed >= 0 ? 1 : -1;
+        //     }
+        //     else
+        //     {
+        //         rollingDirection = previousSpeed >= 0 ? -1 : 1;
+        //     }
+        //     //When rolling backward while in forward gear, apply POSITIVE torque to slow down backward motion
+        //     //Vice versa when in reverse gear and rolling forward.
+        //     if (rollingDirection != requestedDirection)
+        //     {
+        //         torquePercent = -torquePercent;
+        //     }
+        // }
     
         torquePercent *= requestedDirection; //torque requests invert when reverse direction is selected
 
@@ -649,6 +652,10 @@ static void Ms10Task(void)
             DigIo::dcsw_out.Clear();
             IOMatrix::GetPin(IOMatrix::NEGCONTACTOR)->Clear();//Negative contactors off if used
             DigIo::prec_out.Clear();
+            if (Param::GetInt(Param::RESETONOFF) && !hasRestart) {
+                scb_reset_system();
+
+            }
         }
 
         if(Param::GetInt(Param::pot) < Param::GetInt(Param::potmin))
@@ -837,6 +844,37 @@ static void Ms1Task(void)
     selectedChargeInt->Task1Ms();
     selectedShifter->Task1Ms();
     selectedDCDC->Task1Ms();
+
+    // Software PWM for fanPWM at 100Hz (10ms period)
+    static uint8_t pwmCounter = 0;
+
+    if (IOMatrix::GetPin(IOMatrix::FANPWM) != &DigIo::dummypin)
+    {
+        int opmode = Param::GetInt(Param::opmode);
+
+        if (opmode == MOD_RUN) {
+    
+            uint8_t dutyPercent = Param::GetInt(Param::fanPWMDuty);
+            uint8_t onTime = dutyPercent / 10; // Convert 0-100% to 0-10ms
+
+            if (pwmCounter < onTime)
+            {
+                IOMatrix::GetPin(IOMatrix::FANPWM)->Set();
+            }
+            else
+            {
+                IOMatrix::GetPin(IOMatrix::FANPWM)->Clear();
+            }
+
+            pwmCounter++;
+            if (pwmCounter >= 10) // 10ms period for 100Hz
+            {
+                pwmCounter = 0;
+            }
+        } else {
+            IOMatrix::GetPin(IOMatrix::FANPWM)->Clear();
+        }
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1245,6 +1283,7 @@ void Param::Change(Param::PARAM_NUM paramNum)
     Throttle::throttleRamp = Param::GetFloat(Param::throtramp);
     Throttle::throtmaxRev = Param::GetFloat(throtmaxRev);
     Throttle::regenBrake = Param::GetFloat(Param::regenBrake);
+    Throttle::linearity = Param::GetFloat(Param::potlinearity) / 100.0f;
 
     targetCharger=static_cast<ChargeModes>(Param::GetInt(Param::chargemodes));//get charger setting from menu
     targetChgint=static_cast<ChargeInterfaces>(Param::GetInt(Param::interface));//get interface setting from menu
@@ -1369,6 +1408,7 @@ extern "C" int main(void)
     DigIo::mcp_sby.Clear();//enable can3
 
     Terminal t(USART3, TermCmds);
+
 //   FunctionPointerCallback canCb(CanCallback, SetCanFilters);
     Stm32Can c(CAN1, CanHardware::Baud500);
     Stm32Can c2(CAN2, CanHardware::Baud500, true);
@@ -1433,6 +1473,7 @@ extern "C" int main(void)
     {
         char c = 0;
         t.Run();
+
         if (sdo.GetPrintRequest() == PRINT_JSON)
         {
             TerminalCommands::PrintParamsJson(&sdo, &c);
