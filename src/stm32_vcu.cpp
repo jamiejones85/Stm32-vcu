@@ -695,16 +695,6 @@ static void Ms10Task(void)
         if (!chargeMode)
         {
             if(selectedInverter != &openInv)DigIo::inv_out.Set();//inverter power on but not if we are in charge mode and not if OI
-            if (rlyDly == 25 && selectedInverter == &gs450Inverter && Param::GetInt(Param::toyotaReset) == 1) {
-                // Single-shot: rlyDly is only ever 25 on the first pass through
-                // MOD_PRECHARGE. inv_out was just re-energised above (or was already
-                // on for the charge-mode/leaf case), so the Toyota transaxle is
-                // starting from a fresh power-up and needs its setup handshake to
-                // run again - otherwise Task1Ms() carries on sending live running
-                // frames from the last session, which causes cogging at low speed
-                // until the next full MCU reboot.
-                gs450Inverter.ResetHandshake();
-            }
         }
         else if((Param::GetInt(Param::ShuntType) == 0) && selectedInverter == &leafInv)//Shunt 0 + Leaf is precharge using leaf inverter voltage
         {

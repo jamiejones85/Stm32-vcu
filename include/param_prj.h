@@ -172,7 +172,7 @@
     VALUE_ENTRY(chgtyp,        CHGTYPS,             2003 ) \
     VALUE_ENTRY(lasterr,       errorListString,     2004 ) \
     VALUE_ENTRY(status,        STATUS,              2005 ) \
-	VALUE_ENTRY(CanAct,        ONOFF,               2107 ) \
+	  VALUE_ENTRY(CanAct,        ONOFF,               2107 ) \
     VALUE_ENTRY(TorqDerate,    LIMITREASON,         2102 ) \
     VALUE_ENTRY(udc,           "V",                 2006 ) \
     VALUE_ENTRY(udc2,          "V",                 2007 ) \
@@ -279,15 +279,7 @@
     VALUE_ENTRY(bmwACRequest,       "",            2122 ) \
     VALUE_ENTRY(bmwACToruqReq,      "",            2123 ) \
     VALUE_ENTRY(bmwEfan,      "",            2124 ) \
-    VALUE_ENTRY(byte0,      "",            2125 ) \
-    VALUE_ENTRY(byte1,      "",            2126 ) \
-    VALUE_ENTRY(byte2,      "",            2127 ) \
-    VALUE_ENTRY(byte3,      "",            2128 ) \
-    VALUE_ENTRY(byte4,      "",            2129 ) \
-    VALUE_ENTRY(byte5,      "",            2130 ) \
-    VALUE_ENTRY(byte6,      "",            2131 ) \
-    VALUE_ENTRY(byte7,      "",            2132 ) \
-//Next value Id: 2135
+//Next value Id: 2125
 
 //Dead params
 /*

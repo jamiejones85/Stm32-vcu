@@ -48,7 +48,6 @@ void BMW_E65::SetCanInterface(CanHardware* c)
     can->RegisterUserMessage(0x480);//Network Management
     can->RegisterUserMessage(0x1A0);//Speed
     can->RegisterUserMessage(0x1B5);//IHKA/JBE Climate Request
-    can->RegisterUserMessage(0x2D2);//JBE Pressure Sensor
 
 
 }
@@ -80,24 +79,13 @@ void BMW_E65::DecodeCAN(int id, uint32_t* data)
         BMW_E65::handle1B5(data);
         break;
 
-    case 0x2D2: // JBE Pressure Sensor
-        BMW_E65::handle2D2(data);
-        break;
+
 
     default:
         break;
     }
 }
 
-void BMW_E65::handle2D2(uint32_t data[2]) {
-    uint8_t* bytes = (uint8_t*)data;
-
-    // Assuming the refrigerant pressure is in bytes[0] and bytes[1]
-    refrigerant_pressure_bar =  bytes[0] * 0.5;;
-
-    Param::SetFloat(Param::bmwPressure, refrigerant_pressure_bar);
-
-}
 
 void BMW_E65::handle1B5(uint32_t data[2]) {
     uint8_t* bytes = (uint8_t*)data;

@@ -53,7 +53,6 @@ public:
    float GetMotorSpeed() { return mg2_speed; }
    int GetInverterState();
    void DeInit() { setTimerState(false); } //called when switching to another inverter, similar to a destructor
-   void ResetHandshake();
 
    //Lexus/Toyota specific functions
    void SetPrius();
