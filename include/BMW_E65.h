@@ -50,10 +50,17 @@ public:
    void handle2FC(uint32_t data[2]);
    void handle480(uint32_t data[2]);
    void handle330(uint32_t data[2]);
+   void handle1B5(uint32_t data[2]);
+   void handle2D2(uint32_t data[2]);
    void SetE90(bool e90) { isE90 = e90; }
    void Engine_Data();
    void SetFuelGauge(float level);
-
+   void DMEStatus();
+   void BattVoltage3B3();
+   void Heatflow();
+   void DMEAlive();
+   void CruiseStatus();
+   
 private:
    void SendAbsDscMessages(bool Brake_In);
 
@@ -67,6 +74,11 @@ private:
    bool  CANWake;
    bool  StartButt;
    bool isE90;
+   float refrigerant_pressure_bar = 0.0;
+   uint8_t requested_ac_torque = 0;
+   bool ac_request_active = false;
+   uint8_t efan = 0;
+
 };
 
 #endif /* BMW_E65_h */

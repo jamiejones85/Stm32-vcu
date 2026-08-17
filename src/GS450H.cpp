@@ -152,6 +152,49 @@ uint8_t  htm_data_Init_GS300H[6][105]=
     {0,14,0,0,0,0,0,0,0,0,0,0,0,0,0,97,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,22,0,0,0,0,0,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,0,0,0,0,0,0,4,75,25,212,254,190,15,0,0,0,0,0,0,0,137,0,0,0,168,0,0,0,2,0,0,0,0,203,4}
 };
 
+void GS450HClass::ResetHandshake() {
+    // Force USART2 back to a known-clean state - clears any latched
+    // overrun/framing/noise error flags left over from the transaxle
+    // losing power mid-transfer, which DMA alone won't clear.
+    usart_disable(USART2);
+    (void)USART_SR(USART2); // clear ORE/FE/NE by the SR-then-DR read sequence
+    (void)USART_DR(USART2);
+    dma_disable_channel(DMA1, DMA_CHANNEL6);
+    dma_disable_channel(DMA1, DMA_CHANNEL7);
+    usart_enable(USART2);
+    timer_disable_counter(TIM2);
+    timer_set_counter(TIM2, 0);
+    TIM_SR(TIM2) &= ~TIM_SR_UIF; // clear any pending update flag
+    timer_enable_counter(TIM2);
+
+  switch (DriveType) {
+    case GS450H:
+        htm_state = 0;
+        inv_status = 1; // must be 1 for gs450h
+        break;
+    case PRIUS:
+        htm_state = 5;
+        inv_status = 0; // must be 0 for prius
+        break;
+    case IS300H:
+        htm_state = 10;
+        inv_status = 0; // must be 0 for gs300h
+        for (int i = 0; i < 105; i++)
+        htm_data[i] = htm_data_GS300H[i];
+        break;
+    default:
+        break;
+  }
+
+  // The transaxle has just been re-powered, so any accumulated comms
+  // failure/timeout state and in-flight DMA flags are stale.
+  consecutive_failures = 0;
+  rx_timeout = 0;
+  statusInv = 0;
+  tx_complete_flag = false;
+  rx_complete_flag = false;
+}
+
 void GS450HClass::SetTorque(float torquePercent)
 {
     uint8_t MotorActive = Param::GetInt(Param::MotActive);
@@ -392,28 +435,6 @@ void GS450HClass::GS450Houtput()//!!! should be ran every 10ms
     if (Param::GetInt(Param::opmode) == MOD_OFF)
     {
         utils::GS450hOilPump(0);
-
-        //reset state
-        if (Param::GetInt(Param::toyotaReset) == 1)
-        {
-            switch (DriveType)
-            {
-            case GS450H:
-                htm_state = 0;
-                inv_status = 1;//must be 1 for gs450h
-                break;
-            case PRIUS:
-                htm_state = 5;
-                inv_status = 0;//must be 0 for prius
-                break;
-            case IS300H:
-                htm_state = 10;
-                inv_status = 0;//must be 0 for gs300h
-                break;
-            default:
-                break;
-            }
-        }
     }
 
     if (Param::GetInt(Param::opmode) == MOD_RUN)

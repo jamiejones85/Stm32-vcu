@@ -19,7 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define VER 2.30.E
+#define VER 2.30.R1
 
 
 /* Entries must be ordered as follows:
@@ -27,7 +27,7 @@
    2. Temporary parameters (id = 0)
    3. Display values
  */
-//Next param id (increase when adding new parameter!): 166
+//Next param id (increase when adding new parameter!): 168
 /*              category     name         unit       min     max     default id */
 #define PARAM_LIST \
     PARAM_ENTRY(CAT_SETUP,     Inverter,     INVMODES, 0,      8,      0,      5  ) \
@@ -120,6 +120,8 @@
     PARAM_ENTRY(CAT_HEATER,    HeatReq,     ONOFF,     0,      1,      0,      155 ) \
     PARAM_ENTRY(CAT_AIRCON,    Compressor, COMPRESSMODES, 0,  1,      0,      143  ) \
     PARAM_ENTRY(CAT_AIRCON,    AirConCtrl,  ONOFF,     0,      1,      0,      144) \
+    PARAM_ENTRY(CAT_AIRCON,    compTargetRPM, "RPM",  3000,   6000,   4200,   166) \
+    PARAM_ENTRY(CAT_AIRCON,    compRPMHyst, "RPM",    50,     500,    200,    167) \
     PARAM_ENTRY(CAT_AIRCON,    fanPWMDuty,  "%",       0,      100,    0,      154) \
     PARAM_ENTRY(CAT_CLOCK,     Set_Day,     DOW,       0,      6,      0,      46 ) \
     PARAM_ENTRY(CAT_CLOCK,     Set_Hour,    "Hours",   0,      23,     0,      47 ) \
@@ -201,6 +203,7 @@
     VALUE_ENTRY(potbrake,      "dig",               2021 ) \
     VALUE_ENTRY(brakepressure, "dig",               2022 ) \
     VALUE_ENTRY(potnom,        "%",                 2023 ) \
+    VALUE_ENTRY(potdiff,       "%",                 2133 ) \
     VALUE_ENTRY(dir,           DIRS,                2024 ) \
     VALUE_ENTRY(tmphs,         "°C",                2028 ) \
     VALUE_ENTRY(tmpm,          "°C",                2029 ) \
@@ -260,6 +263,7 @@
     VALUE_ENTRY(VehLockSt,     ONOFF,               2100 ) \
     VALUE_ENTRY(compressStat,  COMP_STAT,           2108 ) \
     VALUE_ENTRY(compressRPM,   "",                  2109 ) \
+    VALUE_ENTRY(compressRPMTarget, "RPM",           2134 ) \
     VALUE_ENTRY(acOff,         "",                  2110 ) \
     VALUE_ENTRY(maintainWakeups,"",                 2111 ) \
     VALUE_ENTRY(minsUntilAllowedAgain,"",           2112 ) \
@@ -271,9 +275,19 @@
     VALUE_ENTRY(shouldHeat,  "",                   2118 ) \
     VALUE_ENTRY(fanSpeed,    "",                   2119 ) \
     VALUE_ENTRY(temperatureDial,    "",            2120 ) \
-
-
-//Next value Id: 2121
+    VALUE_ENTRY(bmwPressure,        "",            2121 ) \
+    VALUE_ENTRY(bmwACRequest,       "",            2122 ) \
+    VALUE_ENTRY(bmwACToruqReq,      "",            2123 ) \
+    VALUE_ENTRY(bmwEfan,      "",            2124 ) \
+    VALUE_ENTRY(byte0,      "",            2125 ) \
+    VALUE_ENTRY(byte1,      "",            2126 ) \
+    VALUE_ENTRY(byte2,      "",            2127 ) \
+    VALUE_ENTRY(byte3,      "",            2128 ) \
+    VALUE_ENTRY(byte4,      "",            2129 ) \
+    VALUE_ENTRY(byte5,      "",            2130 ) \
+    VALUE_ENTRY(byte6,      "",            2131 ) \
+    VALUE_ENTRY(byte7,      "",            2132 ) \
+//Next value Id: 2135
 
 //Dead params
 /*

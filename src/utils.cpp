@@ -99,6 +99,15 @@ float GetUserThrottleCommand()
     bool inRange2 = Throttle::CheckAndLimitRange(&pot2val, 1);
     int useChannel = 0; // default case: use Throttle 1
 
+    float potdiffVal = 0.0f;
+    if (potmode == POTMODE_DUALCHANNEL)
+    {
+        float pot1nomTmp = Throttle::NormalizeThrottle(pot1val, 0);
+        float pot2nomTmp = Throttle::NormalizeThrottle(pot2val, 1);
+        potdiffVal = ABS(pot2nomTmp - pot1nomTmp);
+    }
+    Param::SetFloat(Param::potdiff, potdiffVal);
+
     // check the throttle values for plausibility
     if (potmode == POTMODE_SINGLECHANNEL)
     {

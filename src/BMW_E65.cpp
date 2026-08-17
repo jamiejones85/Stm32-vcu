@@ -47,6 +47,9 @@ void BMW_E65::SetCanInterface(CanHardware* c)
     can->RegisterUserMessage(0x2FC);//E90 Enclosure status
     can->RegisterUserMessage(0x480);//Network Management
     can->RegisterUserMessage(0x1A0);//Speed
+    can->RegisterUserMessage(0x1B5);//IHKA/JBE Climate Request
+    can->RegisterUserMessage(0x2D2);//JBE Pressure Sensor
+
 
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -73,9 +76,41 @@ void BMW_E65::DecodeCAN(int id, uint32_t* data)
         BMW_E65::handle480(data);
         break;
 
+    case 0x1B5: // IHKA/JBE Climate Request
+        BMW_E65::handle1B5(data);
+        break;
+
+    case 0x2D2: // JBE Pressure Sensor
+        BMW_E65::handle2D2(data);
+        break;
+
     default:
         break;
     }
+}
+
+void BMW_E65::handle2D2(uint32_t data[2]) {
+    uint8_t* bytes = (uint8_t*)data;
+
+    // Assuming the refrigerant pressure is in bytes[0] and bytes[1]
+    refrigerant_pressure_bar =  bytes[0] * 0.5;;
+
+    Param::SetFloat(Param::bmwPressure, refrigerant_pressure_bar);
+
+}
+
+void BMW_E65::handle1B5(uint32_t data[2]) {
+    uint8_t* bytes = (uint8_t*)data;
+
+    // Read out the raw requested torque value from Byte 1
+    requested_ac_torque = bytes[2];     
+
+    efan = bytes[3];
+
+    Param::SetInt(Param::bmwACRequest, ac_request_active);
+    Param::SetInt(Param::bmwACToruqReq, requested_ac_torque);
+    Param::SetInt(Param::bmwEfan, efan);
+
 }
 
 void BMW_E65::handle130(uint32_t data[2])
@@ -193,6 +228,11 @@ void BMW_E65::Task100Ms()
         }
 
         BMW_E65::Engine_Data();
+        BMW_E65::DMEStatus();
+        BMW_E65::BattVoltage3B3();
+        BMW_E65::Heatflow();
+        BMW_E65::DMEAlive();
+	    BMW_E65::CruiseStatus();
     }
 }
 
@@ -392,6 +432,72 @@ void BMW_E65::SendAbsDscMessages(bool Brake_In)
 
 }
 
+void BMW_E65::BattVoltage3B3()
+{
+	uint8_t bytes[8];
+	bytes[0] =0xF1;
+    bytes[1] =0xC8;
+	if (Ready())
+	{
+		bytes[2] =0x00;
+		bytes[3] =0x00;
+		bytes[4] =0x00;
+		bytes[5] =0xF0;
+	}
+	else
+	{
+		bytes[2] =0xFF;
+		bytes[3] =0x7F;
+		bytes[4] =0x00;
+		bytes[5] =0xF1;
+	}
+   
+    can->Send(0x3B3,bytes,6); //Send on CAN2
+}
+
+void BMW_E65::Heatflow()
+{
+	uint8_t bytes[8];
+
+	bytes[0] =0xFF;
+    bytes[1] =0xFF;
+	bytes[2] =0x3C;
+	if (Ready())
+	{
+		bytes[3] =0x02;
+		bytes[4] =0x96;
+		bytes[5] =0xF0;
+		bytes[6] =0x26;
+	}
+	else
+	{
+		bytes[3] =0x00;
+		bytes[4] =0x00;
+		bytes[5] =0xFC;
+		bytes[6] =0x0F;
+	}
+ 
+    can->Send(0x1B6,bytes,7); //Send on CAN2  
+}
+
+void BMW_E65::DMEStatus() {
+    uint8_t bytes[8];
+
+    // Replicate the exact base payload from your live log
+    bytes[0] = 0xF3; // Engine running state baseline
+    bytes[1] = (ac_request_active && Param::GetInt(Param::opmode) == MOD_RUN) ? 0x09 : 0x00; // 0x09 = Engage, 0x00 = Cut
+    bytes[2] = 0xFC;
+    bytes[3] = 0xFF;
+    bytes[4] = 0xFF;
+    bytes[5] = 0xFF;
+    bytes[6] = 0xFF;
+    bytes[7] = 0x00;
+
+    can->Send(0x3B4, bytes, 8); //Send on CAN
+
+}
+
+
 void BMW_E65::Engine_Data()
 {
     uint8_t bytes[8];
@@ -443,6 +549,40 @@ void BMW_E65::Engine_Data()
         C1D01 = C1D00;
     }
 
+}
+
+void BMW_E65::DMEAlive()
+{
+   uint8_t bytes[8];
+   bytes[0]=0x17;
+   bytes[1]=0x42;
+   bytes[2]=0xFF;
+   bytes[3]=0xFF;
+   bytes[4]=0xFF;
+   bytes[5]=0xFF;
+   bytes[6]=0xFF;
+   bytes[7]=0xFF;
+   can->Send(0x492,bytes,8);
+}
+
+
+void BMW_E65::CruiseStatus() 
+{	
+    uint8_t bytes[8];
+    bytes[0]=0x42;
+    bytes[1]=0x81;
+    bytes[2]=0xC0;
+    bytes[3]=0x00;
+    bytes[4]=0x00;
+    bytes[5]=0x00;
+    bytes[6]=0x00;
+    bytes[7]=0x00;
+    can->Send(0x200,bytes,8); //Send on CAN2
+
+    bytes[0]=0xFD;
+    bytes[1]=0xFF;
+
+    can->Send(0x31A,bytes,2); //Send on CAN2
 }
 
 void BMW_E65::SetFuelGauge(float level)

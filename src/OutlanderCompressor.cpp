@@ -55,12 +55,27 @@ void OutlanderCompressor::Task100Ms()
    if (airConCtrl == 1) {
       bytes[0] = 0x0B;
 
-      if (rpm < 4000) {
-         bytes[5] = 0x35; 
-      } else if ((rpm > 3800) && (rpm <= 4500)) { 
-         bytes[5] = 0x25;       
-      } else if (rpm > 4800) {
-         bytes[5] = 0x20;  
+      // Get target RPM - prefer received value from CAN, fall back to parameter
+      int16_t targetRPM = Param::GetInt(Param::compressRPMTarget);
+      if (targetRPM == 0) {
+         // No CAN value received yet, use manual parameter
+         targetRPM = Param::GetInt(Param::compTargetRPM);
+      }
+
+      int16_t hysteresis = Param::GetInt(Param::compRPMHyst);
+
+      int16_t rpmError = rpm - targetRPM;
+
+      // Hysteresis-based control to reduce cycling
+      if (rpmError < -hysteresis) {
+         // RPM too low, increase compressor speed
+         bytes[5] = 0x35;
+      } else if (rpmError > hysteresis) {
+         // RPM too high, decrease compressor speed
+         bytes[5] = 0x20;
+      } else {
+         // Within target band, maintain moderate speed
+         bytes[5] = 0x25;
       }
    }
 
