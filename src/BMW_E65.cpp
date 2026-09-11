@@ -38,6 +38,8 @@ uint8_t BA5=0x4d;//0x0BA first counter byte(byte 5)
 uint8_t BA6=0x80;//0x0BA second counter byte(byte 6)
 uint8_t AA1=0x00;//0x0AA First counter byte
 uint8_t engineLights = 0;
+uint8_t transmissionCounter186 = 0;
+uint8_t transmissionCounter418 = 0;
 
 void BMW_E65::SetCanInterface(CanHardware* c)
 {
@@ -48,6 +50,7 @@ void BMW_E65::SetCanInterface(CanHardware* c)
     can->RegisterUserMessage(0x480);//Network Management
     can->RegisterUserMessage(0x1A0);//Speed
     can->RegisterUserMessage(0x1B5);//IHKA/JBE Climate Request
+    can->RegisterUserMessage(0x19E);//DSC Status
 
 
 }
@@ -79,11 +82,35 @@ void BMW_E65::DecodeCAN(int id, uint32_t* data)
         BMW_E65::handle1B5(data);
         break;
 
-
+    case 0x19E: // DSC Status
+        BMW_E65::handle19E(data);
+        break;
 
     default:
         break;
     }
+}
+
+void BMW_E65::handle19E(uint32_t data[2]) {
+    uint8_t* bytes = (uint8_t*)data;
+
+    uint8_t dsc_off_state = bytes[1] & 0x0F;
+    uint8_t dtc_flag = (bytes[1] >> 4) & 0x01;
+
+    if (dsc_off_state == 0x0A) { 
+        dsc_full_off = true;
+    } else {
+        dsc_full_off = false;
+    }
+
+    if (dtc_flag == 1) {
+        dtc = true;
+    } else {
+        dtc = false;
+    }
+
+    Param::SetInt(Param::bmwDSCFullOff, dsc_full_off);
+    Param::SetInt(Param::bmwDTC, dtc);   
 }
 
 
@@ -96,8 +123,6 @@ void BMW_E65::handle1B5(uint32_t data[2]) {
     efan = bytes[3];
 
     Param::SetInt(Param::bmwACRequest, ac_request_active);
-    Param::SetInt(Param::bmwACToruqReq, requested_ac_torque);
-    Param::SetInt(Param::bmwEfan, efan);
 
 }
 
@@ -194,6 +219,10 @@ void BMW_E65::Task10Ms()
     if(CANWake)
     {
         SendAbsDscMessages(Param::GetBool(Param::din_brake));
+
+        if (Param::GetInt(Param::Transmission) == _transmission::TRANS_AUTO){
+            SendE90AutomaticSpoof();
+        }
     }
 }
 
@@ -305,6 +334,53 @@ void BMW_E65::Task200Ms()
 void BMW_E65::DashOff()
 {
     this->dashInit=false;
+}
+
+void BMW_E65::SendE90AutomaticSpoof() {
+    uint8_t txData186[8] = {0};
+    uint8_t txData418[8] = {0};
+
+    // --- PACK MESSAGE 0x186 (TransmissionData - 10ms Rate) ---
+    txData186[0] = 0x04; // GearTar: 4 = Drive Mode (D) [1.0]
+    txData186[1] = 0x64; // GearRatio: Fixed midpoint operating calibration [1.0]
+    
+    // Speed Mapping: Convert EV Motor RPM to output shaft metric (or set to 0 for bench tests) [1.0]
+    uint16_t outShaftSpeed = 0x0000; 
+    txData186[2] = (outShaftSpeed & 0xFF);
+    txData186[3] = ((outShaftSpeed >> 8) & 0xFF);
+    
+    txData186[4] = 0x00; // Shifting state: 0 = Stationary/In-gear (No active clutch event) [1.0]
+    txData186[5] = 0x00; // Padded data byte
+    
+    // Increment Alive Counter (Cycles 0 to 14 according to E90 DBC rules) [1.0, 1.3.4]
+    txData186[6] = (transmissionCounter186 & 0x0F);
+    transmissionCounter186++;
+    if (transmissionCounter186 > 14) transmissionCounter186 = 0;
+    
+    // Generate Checksum across the compiled array [1.0]
+    txData186[7] = CalculateBMWChecksum(0x186, txData186, 8);
+    
+    // Transmit via CAN2 (Vehicle Powertrain Side) [1.0]
+    can->Send(0x186, txData186, 8);
+
+
+    // --- PACK MESSAGE 0x418 (TransmissionData2 - 100ms / Scaled Rate) ---
+    // Note: Can be placed inside an internal counter loop so it only sends every 10th iteration
+    txData418[0] = 0x00; // ManualMode off (Standard Auto D Logic) [1.0]
+    txData418[1] = 0x00;
+    txData418[2] = 0x00;
+    
+    txData418[3] = (transmissionCounter418 & 0x0F);
+    transmissionCounter418++;
+    if (transmissionCounter418 > 14) transmissionCounter418 = 0;
+    
+    txData418[4] = 0x00;
+    txData418[5] = 0x00;
+    
+    txData418[6] = CalculateBMWChecksum(0x418, txData418, 8);
+    txData418[7] = 0x00; // Specific padding rules for secondary transmission blocks
+    
+    can->Send(0x418, txData418, 8);
 }
 
 void BMW_E65::SendAbsDscMessages(bool Brake_In)
@@ -612,4 +688,22 @@ void BMW_E65::SetFuelGauge(float level)
 
     Param::SetInt(Param::DigiPot1Step, pot1);
     Param::SetInt(Param::DigiPot2Step, pot2);
+}
+
+uint8_t BMW_E65::CalculateBMWChecksum(uint16_t canId, uint8_t* data, uint8_t length) {
+    uint32_t checksum = 0;
+    
+    // 1. Add the CAN ID bytes (Split into high and low byte)
+    checksum += (canId & 0xFF);
+    checksum += ((canId >> 8) & 0xFF);
+    
+    // 2. Add all data payload bytes except the checksum byte itself (Byte 7)
+    for (int i = 0; i < (length - 1); i++) {
+        checksum += data[i];
+    }
+    
+    // 3. Apply the specific BN2000 transmission offset modifier
+    checksum = (checksum & 0xFF) + 0x0C; 
+    
+    return (uint8_t)(checksum & 0xFF);
 }

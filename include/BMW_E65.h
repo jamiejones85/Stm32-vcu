@@ -52,6 +52,8 @@ public:
    void handle330(uint32_t data[2]);
    void handle1B5(uint32_t data[2]);
    void handle2D2(uint32_t data[2]);
+   void handle19E(uint32_t data[2]);
+
    void SetE90(bool e90) { isE90 = e90; }
    void Engine_Data();
    void SetFuelGauge(float level);
@@ -63,6 +65,8 @@ public:
    
 private:
    void SendAbsDscMessages(bool Brake_In);
+   void SendE90AutomaticSpoof();
+   uint8_t CalculateBMWChecksum(uint16_t canId, uint8_t* data, uint8_t length);
 
    bool terminal15On;
    bool terminalROn;
@@ -78,6 +82,8 @@ private:
    uint8_t requested_ac_torque = 0;
    bool ac_request_active = false;
    uint8_t efan = 0;
+   uint8_t dtc = 0;
+   uint8_t dsc_full_off = 0;
 
 };
 
