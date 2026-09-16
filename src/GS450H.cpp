@@ -614,7 +614,6 @@ void GS450HClass::Task1Ms()
         htm_data[66]=((27500)>>8);
 
         Param::SetInt(Param::MG1Raw, htm_data[5] | (htm_data[6] << 8));
-        Param::SetInt(Param::MG1Raw2,  htm_data[75] | (htm_data[76] << 8));
         Param::SetInt(Param::MG2Raw, htm_data[26] | (htm_data[27] << 8));
 
         //!!moved to checksum function.

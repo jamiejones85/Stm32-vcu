@@ -134,14 +134,14 @@
     PARAM_ENTRY(CAT_CLOCK,     Pre_Min,     "Mins",    0,      59,     0,      54 ) \
     PARAM_ENTRY(CAT_CLOCK,     Pre_Dur,     "Mins",    0,      60,     0,      55 ) \
     PARAM_ENTRY(CAT_IOPINS,    PumpPWM,    PumpOutType,0,      1,      0,      135 ) \
-    PARAM_ENTRY(CAT_IOPINS,    Out1Func,    PINFUNCS,  0,      16,     6,      80 ) \
-    PARAM_ENTRY(CAT_IOPINS,    Out2Func,    PINFUNCS,  0,      16,     7,      81 ) \
-    PARAM_ENTRY(CAT_IOPINS,    Out3Func,    PINFUNCS,  0,      16,     3,      82 ) \
-    PARAM_ENTRY(CAT_IOPINS,    SL1Func,     PINFUNCS,  0,      16,     0,      83 ) \
-    PARAM_ENTRY(CAT_IOPINS,    SL2Func,     PINFUNCS,  0,      16,     0,      84 ) \
-    PARAM_ENTRY(CAT_IOPINS,    PWM1Func,    PINFUNCS,  0,      21,     0,      85 ) \
-    PARAM_ENTRY(CAT_IOPINS,    PWM2Func,    PINFUNCS,  0,      21,     4,      86 ) \
-    PARAM_ENTRY(CAT_IOPINS,    PWM3Func,    PINFUNCS,  0,      21,     2,      87 ) \
+    PARAM_ENTRY(CAT_IOPINS,    Out1Func,    PINFUNCS,  0,      18,     6,      80 ) \
+    PARAM_ENTRY(CAT_IOPINS,    Out2Func,    PINFUNCS,  0,      18,     7,      81 ) \
+    PARAM_ENTRY(CAT_IOPINS,    Out3Func,    PINFUNCS,  0,      18,     3,      82 ) \
+    PARAM_ENTRY(CAT_IOPINS,    SL1Func,     PINFUNCS,  0,      18,     0,      83 ) \
+    PARAM_ENTRY(CAT_IOPINS,    SL2Func,     PINFUNCS,  0,      18,     0,      84 ) \
+    PARAM_ENTRY(CAT_IOPINS,    PWM1Func,    PINFUNCS,  0,      22,     0,      85 ) \
+    PARAM_ENTRY(CAT_IOPINS,    PWM2Func,    PINFUNCS,  0,      22,     4,      86 ) \
+    PARAM_ENTRY(CAT_IOPINS,    PWM3Func,    PINFUNCS,  0,      22,     2,      87 ) \
     PARAM_ENTRY(CAT_IOPINS,    GP12VInFunc, PINFUNCS,  0,      13,     12,     98 ) \
     PARAM_ENTRY(CAT_IOPINS,    HVReqFunc,   PINFUNCS,  0,      13,     12,     99 ) \
     PARAM_ENTRY(CAT_IOPINS,    PB1InFunc,   PINFUNCS,  0,      13,     12,     140 ) \
@@ -271,14 +271,14 @@
     VALUE_ENTRY(MG1Speed,"",                       2114 ) \
     VALUE_ENTRY(MG1Raw, "",                         2115 ) \
     VALUE_ENTRY(MG2Raw, "",                         2116 ) \
-    VALUE_ENTRY(MG1Raw2,     "",                   2117 ) \
+    VALUE_ENTRY(clearToStart,     "",               2117 ) \
     VALUE_ENTRY(shouldHeat,  "",                   2118 ) \
     VALUE_ENTRY(fanSpeed,    "",                   2119 ) \
     VALUE_ENTRY(temperatureDial,    "",            2120 ) \
     VALUE_ENTRY(bmwPressure,        "",            2121 ) \
     VALUE_ENTRY(bmwACRequest,       "",            2122 ) \
-    VALUE_ENTRY(bmwACToruqReq,      "",            2123 ) \
-    VALUE_ENTRY(bmwEfan,      "",            2124 ) \
+    VALUE_ENTRY(bmwDSCFullOff,      "",            2123 ) \
+    VALUE_ENTRY(bmwDTC,      "",                   2124 ) \
 //Next value Id: 2125
 
 //Dead params
@@ -291,8 +291,8 @@
 #define VERSTR STRINGIFY(4=VER)
 #define PINFUNCS     "0=None, 1=ChaDeMoAlw, 2=OBCEnable, 3=HeaterEnable, 4=RunIndication, 5=WarnIndication," \
                      "6=CoolantPump, 7=NegContactor, 8=BrakeLight, 9=ReverseLight, 10=HeatReq, 11=HVRequest," \
-                     "12=DCFCRequest, 13=CompressorRequest, 14=BrakeVacPump, 15=CoolingFan, 16=HvActive, 17=PreHeatOut, 18=PwmTim3, 19=CpSpoof,"\
-                     "20=GS450pump, 21=fanPWM"
+                     "12=DCFCRequest, 13=CompressorRequest, 14=BrakeVacPump, 15=CoolingFan, 16=HvActive, 17=PreHeatOut, 18=PPSpoof, 19=PwmTim3, 20=CpSpoof,"\
+                     "21=GS450pump, 22=fanPWM"
 #define APINFUNCS    "0=None, 1=ProxPilot, 2=BrakeVacSensor"
 #define SHIFTERS     "0=None, 1=BMW_F30, 2=JLR_G1, 3=JLR_G2, 4=BMW_E65"
 #define SHNTYPE      "0=None, 1=ISA, 2=SBOX, 3=VAG"
@@ -431,7 +431,7 @@ enum HeatType
     Noheater = 0,
     AmpHeater = 1,
     VW = 2,
-        OutlanderHeater = 3
+    OutlanderHeater = 3
 };
 
 enum BMSModes
@@ -540,6 +540,12 @@ enum CompressorOptions
 {
     NoCompress = 0,
     OutlanderCompress = 1
+};
+
+enum _transmission
+{
+    TRANS_MANUAL = 0,
+    TRANS_AUTO = 1
 };
 
 

@@ -221,6 +221,14 @@ static void Ms200Task(void)
 
     //if(opmode==MOD_CHARGE) utils::CpSpoofOutput;
     utils::CpSpoofOutput();
+    if(Param::GetInt(Param::CP_PWM)> 0)
+    {
+        IOMatrix::GetPin(IOMatrix::PPSPOOF)->Set();
+    }
+    else
+    {
+        IOMatrix::GetPin(IOMatrix::PPSPOOF)->Clear();
+    }
 
     Param::SetInt(Param::Day,days);
     Param::SetInt(Param::Hour,hours);
@@ -308,6 +316,7 @@ static void Ms200Task(void)
     */
     if(opmode==MOD_CHARGE && !chargeModeDC)
     {
+        hasRestart = false;
         if(Param::GetInt(Param::udc)>=Param::GetInt(Param::Voltspnt) && Param::GetInt(Param::idc)<=Param::GetInt(Param::IdcTerm))
         {
             RunChg=false;//end charge
@@ -642,11 +651,16 @@ static void Ms10Task(void)
 
         DigIo::inv_out.Clear();//inverter power off
         IOMatrix::GetPin(IOMatrix::COOLANTPUMP)->Clear();//Coolant pump off if used
+        IOMatrix::GetPin(IOMatrix::PPSPOOF)->Clear();//Coolant pump off if used
         Param::SetInt(Param::dir, 0); // shift to park/neutral on shutdown regardless of shifter pos
         selectedVehicle->DashOff();
         StartSig=false;//reset for next time
 
-        if(rlyDly!=0) rlyDly--;//here we are going to pause to allow system shut down before opening HV contactors
+        if (rlyDly != 0) {
+            rlyDly--; // here we are going to pause to allow system shut down before
+                        // opening HV contactors
+            selectedCharger->Off(); // send message to charger to shut down
+        }        
         if(rlyDly==0)
         {
             DigIo::dcsw_out.Clear();
@@ -675,6 +689,8 @@ static void Ms10Task(void)
             rlyDly=25;//Recharge sequence timer
             vehicleStartTime = rtc_get_counter_val();
             initbyCharge=true;
+            IOMatrix::GetPin(IOMatrix::PPSPOOF)->Set();//Coolant pump off if used
+
         }
         if (maintainer12V.GetRunMaintainer()) {
             opmode = MOD_PRECHARGE; // proceed to precharge if charge requested.

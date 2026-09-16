@@ -39,6 +39,8 @@ namespace utils
 float SOCVal=0;
 int32_t NetWh=0;
 
+static uint8_t cpHold = 0;
+
 bool Timer1Run = false;
 
 void PostErrorIfRunning(ERROR_MESSAGE_NUM err)
@@ -565,9 +567,22 @@ void CpSpoofOutput()
 
     if(Param::GetInt(Param::interface) == ChargeInterfaces::i3LIM || Param::GetInt(Param::interface) == ChargeInterfaces::CPC || Param::GetInt(Param::interface) == ChargeInterfaces::Foccci)
     {
-        CpVal = float(Param::GetInt(Param::PilotLim) *1.6667);
-        Param::SetInt(Param::CP_PWM,CpVal);
-        CpVal = (Param::GetInt(Param::CP_PWM)*66)-16;
+        if (Param::GetInt(Param::opmode) == MOD_CHARGE)
+        {
+            if (cpHold > 100) {
+                CpVal = float(Param::GetInt(Param::PilotLim) *1.6667);
+                Param::SetInt(Param::CP_PWM,CpVal);
+                CpVal = (Param::GetInt(Param::CP_PWM)*66)-16;
+            } else {
+                cpHold++;
+            }
+        } else {
+            cpHold = 0;
+            CpVal = 0;
+            Param::SetInt(Param::CP_PWM,CpVal);
+            CpVal = (Param::GetInt(Param::CP_PWM)*66)-16;
+        }
+
     }
 
     if(Param::GetInt(Param::PWM1Func) == IOMatrix::CP_SPOOF)
