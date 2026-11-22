@@ -34,7 +34,8 @@
 #define VALUE_ENTRY_HW(name, unit, id, minHWVer) VALUE_ENTRY(name, unit, id)
 #endif
 
-// Next param id (increase when adding new parameter!): 163
+// Next param id (increase when adding new parameter!): 173
+// Gs2Slew, Gs1Slew, GsFlagStep and GsTqBand shape GS450H inverter torque.
 /*              category     name         unit       min     max     default id
  * [minHWVer]
  */
@@ -94,6 +95,11 @@
   PARAM_ENTRY(CAT_THROTTLE, throtrpmfilt, "rpm/10ms", 0.1, 200, 15, 131)       \
   PARAM_ENTRY(CAT_LEXUS, Gear, LOWHIGH, 0, 3, 0, 27)                           \
   PARAM_ENTRY(CAT_LEXUS, OilPump, "%", 0, 100, 50, 28)                         \
+  PARAM_ENTRY(CAT_LEXUS, Gs2Slew, "dig", 1, 4000, 54, 168)                     \
+  PARAM_ENTRY(CAT_LEXUS, Gs1Slew, "dig", 1, 4000, 64, 169)                     \
+  PARAM_ENTRY(CAT_LEXUS, GsFlagStep, "dig", 1, 4000, 128, 170)                 \
+  PARAM_ENTRY(CAT_LEXUS, GsTqBand, "dig", 0, 1000, 0, 171)                     \
+  PARAM_ENTRY(CAT_LEXUS, MthGateEn, ONOFF, 0, 1, 0, 172)                       \
   PARAM_ENTRY(CAT_CRUISE, cruisestep, "rpm", 1, 1000, 200, 29)                 \
   PARAM_ENTRY(CAT_CRUISE, cruiseramp, "rpm/100ms", 1, 1000, 20, 30)            \
   PARAM_ENTRY(CAT_CRUISE, regenlevel, "", 0, 3, 2, 31)                         \
@@ -179,7 +185,7 @@
   PARAM_ENTRY(CAT_PWM, DC_MinTemp, "", 1, 100, 0, 144)                         \
   PARAM_ENTRY(CAT_PWM, DC_MaxSOC, "", 1, 100, 10, 145)                         \
   PARAM_ENTRY(CAT_PWM, DC_MinSOC, "", 1, 100, 0, 146)                          \
-  PARAM_ENTRY(CAT_SETUP, bmwMpgScale, "%", 10, 500, 100, 162)                  \
+  PARAM_ENTRY(CAT_SETUP, bmwMpgScale, "%", 10, 500, 100, 163)                  \
   VALUE_ENTRY(version, VERSTR, 2000)                                           \
   VALUE_ENTRY(hwver, HWVERSTR, 2126)                                           \
   VALUE_ENTRY(opmode, OPMODES, 2002)                                           \
@@ -293,9 +299,13 @@
   VALUE_ENTRY(DMA_RxTimeout, "", 2121)                                         \
   VALUE_ENTRY(DMA_ConsecFail, "", 2122)                                        \
   VALUE_ENTRY(HTM_State, "", 2123)                                             \
-  VALUE_ENTRY(bmwFuelAcc, "ul", 2127)
+  VALUE_ENTRY(bmwFuelAcc, "ul", 2127)                                          \
+  VALUE_ENTRY(MthChkErr, "", 2149)                                             \
+  VALUE_ENTRY(MthGateErr, "", 2150)                                            \
+  VALUE_ENTRY(GsDiag, GS_DIAG, 2151)                                           \
+  VALUE_ENTRY(GsFault, "", 2152)
 
-// Next value Id: 2128
+// Next value Id: 2153
 
 // Dead params
 /*
@@ -409,6 +419,10 @@
 #define DIRLIM "0=None, 1=SpeedThres, 2=SpeedBrake"
 #define ABOVEBELOW "0=BelowOF,1=BelowScale, 2=AboveOF, 3=AboveScale"
 #define DRIVEINHIBITMODES "0=Off,1=Plug detect"
+#define GS_DIAG                                                                \
+  "0=None, 1=MG1Run, 2=MG1Sdn, 4=MG1Clamp, 8=MG1Derate, 16=MG1Flt, "           \
+  "32=MG2Run, 64=MG2Sdn, 128=MG2Clamp, 256=MG2Derate, 512=MG2Flt, "            \
+  "1024=BstRun, 2048=BstSdn, 4096=BstFlt, 8192=MonFlt, 16384=HighGear"
 
 #define CAN_PERIOD_100MS 0
 #define CAN_PERIOD_10MS 1

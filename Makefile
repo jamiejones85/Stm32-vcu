@@ -84,7 +84,11 @@ ld-option = $(call try-run, $(PREFIX)-ld $(1) -v,$(link_command)$(1))
 # only supported on binutils 2.39 or later
 LDFLAGS	+= $(call ld-option,--no-warn-rwx-segments)
 
-all: directories images
+HOST_CXX    ?= g++
+GENPARAMDB   = tools/genparamdb
+PARAMS_JSON  = params.json
+
+all: directories images $(PARAMS_JSON)
 Debug:images
 Release: images
 cleanDebug:clean
@@ -94,6 +98,14 @@ images: get-deps $(BINARY)
 	@printf "  OBJCOPY $(BINARY).hex\n"
 	$(Q)$(OBJCOPY) -Oihex $(BINARY) $(BINARY).hex
 	$(Q)$(SIZE) $(BINARY)
+
+$(GENPARAMDB): tools/genparamdb.cpp include/param_prj.h libopeninv/include/my_string.h libopeninv/include/errormessage.h
+	@printf "  HOST_CXX $@\n"
+	$(Q)$(HOST_CXX) -std=c++14 -Iinclude -Ilibopeninv/include $< -o $@
+
+$(PARAMS_JSON): $(GENPARAMDB) include/param_prj.h
+	@printf "  GEN     $@\n"
+	$(Q)./$< > $@
 
 directories: ${OUT_DIR}
 
@@ -128,6 +140,8 @@ clean:
 	$(Q)rm -f $(BINARY).srec
 	@printf "  CLEAN   $(BINARY).list\n"
 	$(Q)rm -f $(BINARY).list
+	@printf "  CLEAN   $(PARAMS_JSON)\n"
+	$(Q)rm -f $(PARAMS_JSON) $(GENPARAMDB)
 
 flash: images
 	@printf "  FLASH   $(BINARY).bin\n"
