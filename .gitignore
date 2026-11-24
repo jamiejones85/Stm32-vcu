@@ -49,7 +49,3 @@ test_vcu
 
 # hex output - only keep for releases
 stm32_vcu.hex
-
-# Generated param database
-params.json
-tools/genparamdb
