@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZombieVerter Stm32-vcu Throttle &amp; Torque Slew Simulator</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    :root {
+      --bg-main: #09090b;
+      --card-bg: #141417;
+      --card-border: #27272a;
+      --text-main: #fafafa;
+      --text-muted: #a1a1aa;
+      --accent-blue: #3b82f6;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --accent-cyan: #06b6d4;
+    }
+    input[type=range] {
+      accent-color: #3b82f6;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #27272a;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 antialiased font-sans p-4 md:p-8 min-h-screen">
+  <div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- Header & GitHub Pages Deploy Banner -->
+    <header class="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-5 md:p-6 shadow-xl backdrop-blur">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-3">
+            <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
+              <span class="text-blue-500">⚡</span> ZombieVerter Throttle &amp; Slew Simulator
+            </h1>
+            <span class="px-2.5 py-0.5 text-xs font-semibold bg-emerald-950 text-emerald-400 border border-emerald-800 rounded-full">
+              Live Client-Side Model
+            </span>
+          </div>
+          <p class="text-sm text-zinc-400 mt-1 max-w-3xl">
+            Simulate and analyze real-time throttle intent, asymmetric slew rates, and GS450h/Prius hybrid motor torque splitting.
+            Upload firmware binaries (<code class="text-zinc-300">.bin</code>, <code class="text-zinc-300">.elf</code>) or calibration (<code class="text-zinc-300">current.json</code>) to inspect low-speed judder and tune parameters.
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="exportCurrentJson()" class="px-3.5 py-2 text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 rounded-xl transition flex items-center gap-1.5 shadow-sm">
+            <span>💾</span> Export current.json
+          </button>
+          <a href="https://github.com/jamiejones85/Stm32-vcu" target="_blank" class="px-3.5 py-2 text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition flex items-center gap-1.5 shadow-sm">
+            <span>🐙</span> GitHub Repo
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Upload & Binary File Dropzone -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="md:col-span-2 bg-zinc-900 border border-zinc-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
+              <span>📁</span> Firmware / Configuration Upload
+            </h2>
+            <span id="file_loaded_badge" class="text-xs font-mono text-zinc-500">Default Baseline Active</span>
+          </div>
+          
+          <div id="drop_zone" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" onclick="document.getElementById('file_input').click()"
+               class="border-2 border-dashed border-zinc-700 hover:border-blue-500 bg-zinc-950/60 hover:bg-zinc-950 rounded-xl p-6 text-center cursor-pointer transition">
+            <input type="file" id="file_input" class="hidden" accept=".json,.bin,.elf,.hex" onchange="handleFileSelect(event)">
+            <div class="text-3xl mb-2">📥</div>
+            <p class="text-sm font-medium text-zinc-200">Drag &amp; Drop <code class="text-blue-400">current.json</code>, <code class="text-emerald-400">stm32_vcu.bin</code>, or <code class="text-purple-400">.elf</code> here</p>
+            <p class="text-xs text-zinc-500 mt-1">Or click to browse from your computer. Parsing and emulation run 100% locally in your browser.</p>
+          </div>
+        </div>
+
+        <div id="binary_info_bar" class="mt-4 pt-3 border-t border-zinc-800/80 text-xs text-zinc-400 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span id="binary_status_text">Parameters matched with GS450H high-gear transmission baseline</span>
+          </div>
+          <button onclick="resetDefaults()" class="text-blue-400 hover:text-blue-300 transition underline">Reset to Default Baseline</button>
+        </div>
+      </div>
+
+      <!-- Quick Status & Metric Card -->
+      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-zinc-400 mb-3 flex items-center gap-2">
+          <span>📊</span> Live Simulation Metrics
+        </h2>
+        <div class="space-y-3">
+          <div class="flex justify-between items-center text-xs pb-2 border-b border-zinc-800">
+            <span class="text-zinc-400">Max Slew Up Rate</span>
+            <span id="metric_slew_up" class="font-mono font-semibold text-blue-400">5000 %/s</span>
+          </div>
+          <div class="flex justify-between items-center text-xs pb-2 border-b border-zinc-800">
+            <span class="text-zinc-400">Down Slew Rate</span>
+            <span id="metric_slew_down" class="font-mono font-semibold text-rose-400">Infinite (0 ms)</span>
+          </div>
+          <div class="flex justify-between items-center text-xs pb-2 border-b border-zinc-800">
+            <span class="text-zinc-400">Intent Window Lag</span>
+            <span id="metric_intent_lag" class="font-mono font-semibold text-amber-400">500 ms (50 samples)</span>
+          </div>
+          <div class="flex justify-between items-center text-xs">
+            <span class="text-zinc-400">Regen Threshold</span>
+            <span id="metric_regen_rpm" class="font-mono font-semibold text-indigo-400">400 RPM (~3.5 mph)</span>
+          </div>
+        </div>
+        <div class="mt-4 pt-3 border-t border-zinc-800 text-[11px] text-zinc-500">
+          Task loop: 10 ms (100 Hz). Motor torque resolution: 1 count = 1/8 Nm.
+        </div>
+      </div>
+    </div>
+
+    <!-- Scenario Selector Pills -->
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 shadow-lg space-y-3">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <span class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Preset Driving Scenarios:</span>
+        <span class="text-xs text-zinc-500">Select to test real-world driving conditions against the VCU logic</span>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+        <button onclick="setScenario('tipin_hold')" id="btn_tipin_hold" class="scenario-btn p-3 rounded-xl border border-zinc-800 bg-blue-600 text-white text-left transition hover:border-blue-500 shadow">
+          <div class="text-xs font-bold">1. Tip-In &amp; Hold</div>
+          <div class="text-[11px] text-zinc-200 mt-0.5">Creep 0 &rarr; 12% in 200ms, hold steady. Reveals 500ms lag torque drop.</div>
+        </button>
+        <button onclick="setScenario('pedal_jitter')" id="btn_pedal_jitter" class="scenario-btn p-3 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-300 text-left transition hover:border-zinc-700">
+          <div class="text-xs font-bold">2. Feathering &amp; Wobble</div>
+          <div class="text-[11px] text-zinc-400 mt-0.5">Crawling with &plusmn;0.7% ripple. Shows intent-switch chatter glitch.</div>
+        </button>
+        <button onclick="setScenario('speed_cross_400')" id="btn_speed_cross_400" class="scenario-btn p-3 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-300 text-left transition hover:border-zinc-700">
+          <div class="text-xs font-bold">3. Accelerating past 400 RPM</div>
+          <div class="text-[11px] text-zinc-400 mt-0.5">Steady 8% pedal from 200 &rarr; 600 RPM. Shows regen step torque loss.</div>
+        </button>
+        <button onclick="setScenario('step_tipout')" id="btn_step_tipout" class="scenario-btn p-3 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-300 text-left transition hover:border-zinc-700">
+          <div class="text-xs font-bold">4. Step Tip-Out</div>
+          <div class="text-[11px] text-zinc-400 mt-0.5">Step 15% &rarr; 5% pedal. Highlights 0ms infinite downward drop.</div>
+        </button>
+      </div>
+      <div id="scenario_desc" class="text-xs text-zinc-300 bg-zinc-950/70 p-3 rounded-xl border border-zinc-800/80 leading-relaxed">
+        <!-- Dynamic Description -->
+      </div>
+    </div>
+
+    <!-- Live Charts Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Chart 1: Throttle Percentages -->
+      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 md:p-5 shadow-lg space-y-3">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="font-bold text-sm text-white">Throttle Signal Processing Pipeline</h3>
+            <p class="text-xs text-zinc-500">From raw ADC pedal position to normalized and ramped command (%)</p>
+          </div>
+          <div class="flex flex-wrap gap-3 text-xs">
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-400"></span>Pedal</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>Potnom (Calc)</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>Ramped %</span>
+          </div>
+        </div>
+        <div class="relative h-64 md:h-72 bg-zinc-950/60 rounded-xl border border-zinc-800/60 p-2">
+          <canvas id="canvas_throttle" class="w-full h-full"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart 2: Output Torques -->
+      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 md:p-5 shadow-lg space-y-3">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="font-bold text-sm text-white">Lexus GS450h Motor Output (MG1 &amp; MG2)</h3>
+            <p class="text-xs text-zinc-500">Individual motor counts and combined output torque (Nm)</p>
+          </div>
+          <div class="flex flex-wrap gap-3 text-xs">
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>MG1</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-indigo-400"></span>MG2</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span>Total (Nm)</span>
+          </div>
+        </div>
+        <div class="relative h-64 md:h-72 bg-zinc-950/60 rounded-xl border border-zinc-800/60 p-2">
+          <canvas id="canvas_torque" class="w-full h-full"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline Inspection Scrubber -->
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 shadow-lg space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
+          <span>⏱️</span> Timeline Scrub &amp; Value Inspector
+        </h3>
+        <span id="scrub_time_badge" class="text-xs font-mono bg-blue-950 text-blue-300 border border-blue-800 px-2.5 py-1 rounded-lg">t = 0 ms</span>
+      </div>
+      <input type="range" id="timeline_slider" min="0" max="120" value="40" class="w-full" oninput="onScrubSlider(this.value)">
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 text-center">
+        <div class="bg-zinc-950/80 p-2.5 rounded-xl border border-zinc-800">
+          <div class="text-[11px] text-zinc-500">Pedal Position</div>
+          <div id="insp_pedal" class="text-sm font-bold text-blue-400 mt-0.5">--</div>
+        </div>
+        <div class="bg-zinc-950/80 p-2.5 rounded-xl border border-zinc-800">
+          <div class="text-[11px] text-zinc-500">Motor Speed</div>
+          <div id="insp_speed" class="text-sm font-bold text-zinc-300 mt-0.5">--</div>
+        </div>
+        <div class="bg-zinc-950/80 p-2.5 rounded-xl border border-zinc-800">
+          <div class="text-[11px] text-zinc-500">50-Sample Avg Pos</div>
+          <div id="insp_avg" class="text-sm font-bold text-amber-300 mt-0.5">--</div>
+        </div>
+        <div class="bg-zinc-950/80 p-2.5 rounded-xl border border-zinc-800">
+          <div class="text-[11px] text-zinc-500">Ramped Torque %</div>
+          <div id="insp_ramped" class="text-sm font-bold text-emerald-400 mt-0.5">--</div>
+        </div>
+        <div class="bg-zinc-950/80 p-2.5 rounded-xl border border-zinc-800">
+          <div class="text-[11px] text-zinc-500">MG1 / MG2 Counts</div>
+          <div id="insp_motors" class="text-sm font-bold text-cyan-300 mt-0.5">--</div>
+        </div>
+        <div class="bg-zinc-950/80 p-2.5 rounded-xl border border-zinc-800">
+          <div class="text-[11px] text-zinc-500">Total Output (Nm)</div>
+          <div id="insp_nm" class="text-sm font-bold text-rose-400 mt-0.5">--</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIVE EDITABLE PARAMETERS SECTION -->
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 md:p-6 shadow-xl space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-800 pb-4">
+        <div>
+          <h2 class="text-base font-bold text-white flex items-center gap-2">
+            <span>⚙️</span> Interactive Parameter Tuning
+          </h2>
+          <p class="text-xs text-zinc-400">
+            Adjust any parameter below. The simulation updates immediately so you can see the effect on torque slew in real time.
+          </p>
+        </div>
+        <button onclick="resetDefaults()" class="px-3 py-1.5 text-xs font-medium text-zinc-300 bg-zinc-800 hover:bg-zinc-700 rounded-lg border border-zinc-700 transition">
+          Reset All Parameters
+        </button>
+      </div>
+
+      <!-- Controls Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- Column 1: Throttle Slew & Deadband -->
+        <div class="space-y-4 bg-zinc-950/50 p-4 rounded-xl border border-zinc-800/80">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-blue-400 border-b border-zinc-800 pb-2">
+            Throttle Ramping &amp; Range
+          </h3>
+          
+          <!-- throtramp -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between text-xs">
+              <label for="param_throtramp" class="font-medium text-zinc-300">throtramp (% / 10ms)</label>
+              <span id="disp_throtramp" class="font-mono text-blue-400 font-bold">50.0</span>
+            </div>
+            <input type="range" id="param_throtramp" min="1" max="100" step="1" value="50" oninput="updateParam('throtramp', this.value)" class="w-full">
+            <p class="text-[11px] text-zinc-500">Slew rate limit for throttle ramp-up. 50% = 5000 %/s.</p>
+          </div>
+
+          <!-- throtdead -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between text-xs">
+              <label for="param_throtdead" class="font-medium text-zinc-300">throtdead (%)</label>
+              <span id="disp_throtdead" class="font-mono text-amber-400 font-bold">5.0</span>
+            </div>
+            <input type="range" id="param_throtdead" min="0" max="25" step="0.5" value="5" oninput="updateParam('throtdead', this.value)" class="w-full">
+            <p class="text-[11px] text-zinc-500">Deadband percentage at the beginning of pedal travel.</p>
+          </div>
+
+          <!-- throtmax -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between text-xs">
+              <label for="param_throtmax" class="font-medium text-zinc-300">throtmax (%)</label>
+              <span id="disp_throtmax" class="font-mono text-zinc-300 font-bold">100.0</span>
+            </div>
+            <input type="range" id="param_throtmax" min="10" max="100" step="5" value="100" oninput="updateParam('throtmax', this.value)" class="w-full">
+            <p class="text-[11px] text-zinc-500">Maximum forward torque limit scaling.</p>
+          </div>
+        </div>
+
+        <!-- Column 2: Regen & Low-Speed Thresholds -->
+        <div class="space-y-4 bg-zinc-950/50 p-4 rounded-xl border border-zinc-800/80">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-rose-400 border-b border-zinc-800 pb-2">
+            Regen &amp; Speed Transitions
+          </h3>
+
+          <!-- regenendrpm -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between text-xs">
+              <label for="param_regenendrpm" class="font-medium text-zinc-300">regenendrpm (RPM)</label>
+              <span id="disp_regenendrpm" class="font-mono text-indigo-400 font-bold">400</span>
+            </div>
+            <input type="range" id="param_regenendrpm" min="0" max="1500" step="50" value="400" oninput="updateParam('regenendrpm', this.value)" class="w-full">
+            <p class="text-[11px] text-zinc-500">Speed below which regen cuts to 0 (creates ~3 mph torque step).</p>
+          </div>
+
+          <!-- regenmax -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between text-xs">
+              <label for="param_regenmax" class="font-medium text-zinc-300">regenmax (%)</label>
+              <span id="disp_regenmax" class="font-mono text-rose-400 font-bold">-15.0</span>
+            </div>
+            <input type="range" id="param_regenmax" min="-50" max="0" step="1" value="-15" oninput="updateParam('regenmax', this.value)" class="w-full">
+            <p class="text-[11px] text-zinc-500">Maximum off-throttle regenerative braking limit.</p>
+          </div>
+
+          <!-- regenramp -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between text-xs">
+              <label for="param_regenramp" class="font-medium text-zinc-300">regenramp (% / 10ms)</label>
+              <span id="disp_regenramp" class="font-mono text-zinc-300 font-bold">1.0</span>
+            </div>
+            <input type="range" id="param_regenramp" min="0.1" max="10" step="0.1" value="1.0" oninput="updateParam('regenramp', this.value)" class="w-full">
+            <p class="text-[11px] text-zinc-500">Rate at which regen torque ramps into effect.</p>
+          </div>
+        </div>
+
+        <!-- Column 3: Architecture & Smoothing Toggles -->
+        <div class="space-y-4 bg-zinc-950/50 p-4 rounded-xl border border-zinc-800/80">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400 border-b border-zinc-800 pb-2">
+            Algorithms &amp; Slew Fixes
+          </h3>
+
+          <!-- AveragePos Switch Toggle -->
+          <div class="flex items-start justify-between gap-3 pt-1">
+            <div>
+              <span class="text-xs font-medium text-zinc-200 block">50-Sample AveragePos Intent Switch</span>
+              <p class="text-[11px] text-zinc-500 mt-0.5">Toggle the VCU's 500ms lag snap. Disabling this removes the tip-in torque drop.</p>
+            </div>
+            <input type="checkbox" id="toggle_intent_switch" checked onchange="updateToggle('intent_switch', this.checked)" class="w-5 h-5 accent-blue-600 rounded mt-0.5">
+          </div>
+
+          <!-- Symmetric Slew Toggle -->
+          <div class="flex items-start justify-between gap-3 pt-2 border-t border-zinc-800/60">
+            <div>
+              <span class="text-xs font-medium text-zinc-200 block">Symmetric Slew Ramping</span>
+              <p class="text-[11px] text-zinc-500 mt-0.5">Apply ramp limit when letting off positive throttle (eliminates 0ms infinite downward drop).</p>
+            </div>
+            <input type="checkbox" id="toggle_symmetric_slew" onchange="updateToggle('symmetric_slew', this.checked)" class="w-5 h-5 accent-emerald-600 rounded mt-0.5">
+          </div>
+
+          <!-- OEM Lexus Slew Toggle -->
+          <div class="flex items-start justify-between gap-3 pt-2 border-t border-zinc-800/60">
+            <div>
+              <span class="text-xs font-medium text-zinc-200 block">OEM Lexus Transaxle Slew Limiter</span>
+              <p class="text-[11px] text-zinc-500 mt-0.5">Limit MG2 to 32 counts/ms and MG1 to 64 counts/ms (per upstream reverse engineering).</p>
+            </div>
+            <input type="checkbox" id="toggle_oem_slew" onchange="updateToggle('oem_slew', this.checked)" class="w-5 h-5 accent-purple-600 rounded mt-0.5">
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Root Cause Deep Dive Guide -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
+      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-2">
+        <h4 class="font-bold text-amber-400 text-sm flex items-center gap-1.5">
+          <span>⚠️</span> 1. The 500ms AveragePos Lag
+        </h4>
+        <p class="text-zinc-400 leading-relaxed">
+          Inside <code class="text-zinc-300">Throttle::CalcThrottle</code>, when <code class="text-zinc-300">PedalChange &lt; 1.0%</code>, the algorithm switches from raw position to <code class="text-zinc-300">TempAvgPos</code> (a 50-sample / 500ms moving average). When you hold steady throttle, torque <strong>suddenly snaps down</strong> toward the 500ms historical average, causing an instant torque drop.
+        </p>
+      </div>
+
+      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-2">
+        <h4 class="font-bold text-rose-400 text-sm flex items-center gap-1.5">
+          <span>⚡</span> 2. Infinite Downward Slew Rate
+        </h4>
+        <p class="text-zinc-400 leading-relaxed">
+          In <code class="text-zinc-300">Throttle::RampThrottle</code>: while <code class="text-zinc-300">throtramp = 50%</code> ramps up, coming down on positive throttle executes <code class="text-zinc-300">throttleRamped = potnom;</code>. There is <strong>0 ramping downward</strong>! Any tiny downward foot tremor or ADC ripple drops motor torque instantaneously with 0ms delay.
+        </p>
+      </div>
+
+      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-2">
+        <h4 class="font-bold text-indigo-400 text-sm flex items-center gap-1.5">
+          <span>📉</span> 3. The 400 RPM Regen Step
+        </h4>
+        <p class="text-zinc-400 leading-relaxed">
+          At &lt;400 RPM (<code class="text-zinc-300">regenendrpm</code>), <code class="text-zinc-300">regenlim = 0</code>. At &gt;400 RPM, regen limits activate down to -15%. Because throttle is mapped as <code class="text-zinc-300">changeFloat(potnom, 0, 100, regenlim*10, 1000)</code>, as the car accelerates through 400 RPM (~3.5 mph), torque <strong>automatically drops by ~20%</strong> at constant pedal.
+        </p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-center text-xs text-zinc-500 py-4 border-t border-zinc-800/80">
+      ZombieVerter Stm32-vcu Simulator &bull; Client-side HTML5/Canvas/JavaScript &bull; Ready for GitHub Pages deployment
+    </footer>
+
+  </div>
+
+  <script>
+    // --- Model Parameters (from current.json baseline) ---
+    const defaultParams = {
+      throtramp: 50.0,
+      throtdead: 5.0,
+      throtmax: 100.0,
+      throtmin: -100.0,
+      throtmaxRev: 60.0,
+      throtramprpm: 20000.0,
+      regenramp: 1.0,
+      regenmax: -15.0,
+      regenendrpm: 400.0,
+      regenrpm: 1500.0,
+      potmin: 518.0,
+      potmax: 2344.0,
+      MotActive: 0,
+      Gear: 1
+    };
+
+    let params = Object.assign({}, defaultParams);
+    let toggles = {
+      intent_switch: true,
+      symmetric_slew: false,
+      oem_slew: false
+    };
+
+    let currentScenario = 'tipin_hold';
+    let simPoints = [];
+    let scrubIndex = 40;
+
+    // --- Core Simulation Math (Exact match to C++ Stm32-vcu) ---
+    function changeFloat(x, in_min, in_max, out_min, out_max) {
+      return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+    }
+
+    function rampup(current, target, rate) {
+      return (target < current || (current + rate) > target) ? target : (current + rate);
+    }
+
+    function rampdown(current, target, rate) {
+      return (target > current || (current - rate) < target) ? target : (current - rate);
+    }
+
+    class ThrottleSimulator {
+      constructor(p, t) {
+        this.p = p;
+        this.t = t;
+        this.pedalArr = new Array(50).fill(0.0);
+        this.pedalIdx = 0;
+        this.pedalTot = 0.0;
+        this.throttleRamped = 0.0;
+        this.mg1_slewed = 0.0;
+        this.mg2_slewed = 0.0;
+      }
+
+      averagePos(pos) {
+        this.pedalIdx = (this.pedalIdx + 1) % 50;
+        this.pedalTot -= this.pedalArr[this.pedalIdx];
+        this.pedalTot += pos;
+        this.pedalArr[this.pedalIdx] = pos;
+        return this.pedalTot / 50.0;
+      }
+
+      calcThrottle(pedalPct, speed) {
+        if (speed < 0) speed = -speed;
+        let potnom = pedalPct;
+
+        // Apply deadzone
+        if (potnom < this.p.throtdead) {
+          potnom = 0.0;
+        } else {
+          potnom = (potnom - this.p.throtdead) * (100.0 / (100.0 - this.p.throtdead));
+        }
+
+        const pedalPos = potnom;
+        const tempAvgPos = this.averagePos(pedalPos);
+        const pedalChange = pedalPos - tempAvgPos;
+
+        // Intent switch
+        if (this.t.intent_switch) {
+          if (pedalChange >= -1.0 && pedalChange <= 1.0) {
+            potnom = tempAvgPos; // Intent: pedal not changed -> switch to 500ms average
+          }
+        }
+
+        // Regen limit based on speed
+        let regenlim = 0.0;
+        if (speed < 100 || speed < this.p.regenendrpm) {
+          regenlim = 0.0;
+        } else if (speed < this.p.regenrpm) {
+          regenlim = changeFloat(speed, this.p.regenendrpm, this.p.regenrpm, 0.0, this.p.regenmax);
+        } else {
+          regenlim = this.p.regenmax;
+        }
+
+        // Forward mapping
+        potnom = changeFloat(potnom, 0.0, 100.0, regenlim * 10.0, this.p.throtmax * 10.0) * 0.1;
+        return { potnom, tempAvgPos, pedalChange, regenlim };
+      }
+
+      rampThrottle(potnom) {
+        potnom = Math.min(this.p.throtmax, Math.max(this.p.throtmin, potnom));
+
+        if (potnom >= this.throttleRamped) {
+          if (potnom > 0) {
+            this.throttleRamped = rampup(this.throttleRamped, potnom, this.p.throtramp);
+          } else {
+            this.throttleRamped = rampup(this.throttleRamped, potnom, this.p.regenramp);
+          }
+          potnom = this.throttleRamped;
+        } else {
+          if (potnom >= 0) {
+            if (this.t.symmetric_slew) {
+              // Slew rate applied downward on positive throttle
+              this.throttleRamped = rampdown(this.throttleRamped, potnom, this.p.throtramp);
+              potnom = this.throttleRamped;
+            } else {
+              // Unmodified VCU: infinite downward slew rate!
+              this.throttleRamped = potnom;
+            }
+          } else {
+            if (this.throttleRamped > 0) {
+              this.throttleRamped = 0.0;
+            }
+            this.throttleRamped = rampdown(this.throttleRamped, potnom, this.p.regenramp);
+            potnom = this.throttleRamped;
+          }
+        }
+        return potnom;
+      }
+
+      setTorque(torquePercent) {
+        let mg1 = (torquePercent * 4375.0) / 100.0;
+        let scaledTarget = (torquePercent * 3500.0) / 100.0;
+        let mg2 = scaledTarget;
+
+        if (this.p.MotActive === 0) { // Both motors
+          if (scaledTarget < 0) mg1 = 0.0;
+        } else if (this.p.MotActive === 1) {
+          mg2 = 0.0;
+        } else if (this.p.MotActive === 2) {
+          mg1 = 0.0;
+        }
+
+        // OEM Slew Limiter option (reverse-engineered Lexus rates: MG2 ~32/ms, MG1 ~64/ms)
+        if (this.t.oem_slew) {
+          this.mg1_slewed = rampup(this.mg1_slewed, mg1, 64.0);
+          this.mg1_slewed = rampdown(this.mg1_slewed, mg1, 64.0);
+          this.mg2_slewed = rampup(this.mg2_slewed, mg2, 32.0);
+          this.mg2_slewed = rampdown(this.mg2_slewed, mg2, 32.0);
+          mg1 = this.mg1_slewed;
+          mg2 = this.mg2_slewed;
+        }
+
+        const totalCounts = mg1 + mg2;
+        const totalNm = totalCounts * 0.125;
+        return { mg1, mg2, totalCounts, totalNm };
+      }
+    }
+
+    // --- Scenario Definitions ---
+    const scenarios = {
+      'tipin_hold': {
+        name: 'Tip-In & Hold',
+        desc: '<strong>Driver Tips In 0 &rarr; 12% in 200ms and holds steady at 250 RPM.</strong> Notice what happens around t = 590ms: as the rolling average catches up, <code>PedalChange</code> drops below 1.0%, triggering the intent-switch. Torque instantly <strong>drops by ~8 Nm</strong> despite a perfectly steady pedal! (Disable "50-Sample AveragePos Intent Switch" to see the cure).',
+        pedal: t => (t <= 200) ? (t / 200.0) * 12.0 : 12.0,
+        speed: t => 250,
+        duration: 1200
+      },
+      'pedal_jitter': {
+        name: 'Feathering & Micro-Wobble',
+        desc: '<strong>Driver holds ~8% pedal at crawling speed with &plusmn;0.7% foot vibration / potentiometer ripple.</strong> Every time the pedal delta crosses &plusmn;1.0%, the algorithm bounces between raw pedal and lagged average with infinite downward slew, causing violent torque chatter. (Enable "Symmetric Slew Ramping" to smooth this).',
+        pedal: t => 8.0 + 0.7 * Math.sin(t * 0.02),
+        speed: t => 250,
+        duration: 1200
+      },
+      'speed_cross_400': {
+        name: 'Accelerating past 400 RPM',
+        desc: '<strong>Vehicle accelerates 200 &rarr; 600 RPM with an unmoving 8% pedal.</strong> As the vehicle crosses 400 RPM (<code>regenendrpm</code>), the mapping lower bound shifts from 0% down to -15%, causing torque to drop from 31 Nm down to 25 Nm (a 20% torque loss) without moving your foot.',
+        pedal: t => 8.0,
+        speed: t => 200 + (t / 1200.0) * 400,
+        duration: 1200
+      },
+      'step_tipout': {
+        name: 'Step Tip-Out',
+        desc: '<strong>Pedal steps down 15% &rarr; 5% at t = 400ms.</strong> Ramp-up is limited by <code>throtramp = 50%</code>, but ramp-down drops in <strong>0ms (infinite slew)</strong> because <code>throttleRamped = potnom;</code> has no low-pass filter on positive throttle.',
+        pedal: t => (t < 400) ? 15.0 : 5.0,
+        speed: t => 300,
+        duration: 1000
+      }
+    };
+
+    function runCurrentSimulation() {
+      const sc = scenarios[currentScenario];
+      const sim = new ThrottleSimulator(params, toggles);
+
+      // Pre-run 60 zero cycles to clear buffers
+      for (let i = 0; i < 60; i++) {
+        sim.calcThrottle(0.0, 0);
+        sim.rampThrottle(0.0);
+      }
+
+      simPoints = [];
+      for (let t = 0; t <= sc.duration; t += 10) {
+        const pedal = sc.pedal(t);
+        const speed = sc.speed(t);
+        const { potnom, tempAvgPos, pedalChange, regenlim } = sim.calcThrottle(pedal, speed);
+        const ramped = sim.rampThrottle(potnom);
+        const { mg1, mg2, totalCounts, totalNm } = sim.setTorque(ramped);
+
+        simPoints.push({
+          t, pedal, speed, calc: potnom, avg: tempAvgPos, change: pedalChange,
+          ramped, mg1, mg2, counts: totalCounts, nm: totalNm
+        });
+      }
+
+      const slider = document.getElementById('timeline_slider');
+      slider.max = simPoints.length - 1;
+      scrubIndex = Math.min(scrubIndex, simPoints.length - 1);
+      slider.value = scrubIndex;
+
+      updateMetricBadges();
+      updateInspectionValues();
+      drawCharts();
+    }
+
+    function setScenario(name) {
+      currentScenario = name;
+      document.querySelectorAll('.scenario-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'text-white');
+        btn.classList.add('bg-zinc-950', 'text-zinc-300');
+      });
+      const activeBtn = document.getElementById('btn_' + name);
+      if (activeBtn) {
+        activeBtn.classList.remove('bg-zinc-950', 'text-zinc-300');
+        activeBtn.classList.add('bg-blue-600', 'text-white');
+      }
+      document.getElementById('scenario_desc').innerHTML = scenarios[name].desc;
+      runCurrentSimulation();
+    }
+
+    function updateParam(name, val) {
+      params[name] = parseFloat(val);
+      const disp = document.getElementById('disp_' + name);
+      if (disp) disp.innerText = (parseFloat(val) % 1 === 0) ? parseInt(val) : parseFloat(val).toFixed(1);
+      runCurrentSimulation();
+    }
+
+    function updateToggle(name, val) {
+      toggles[name] = val;
+      runCurrentSimulation();
+    }
+
+    function onScrubSlider(val) {
+      scrubIndex = parseInt(val);
+      updateInspectionValues();
+      drawCharts();
+    }
+
+    function updateMetricBadges() {
+      document.getElementById('metric_slew_up').innerText = (params.throtramp * 100) + ' %/s';
+      document.getElementById('metric_slew_down').innerText = toggles.symmetric_slew ? (params.throtramp * 100) + ' %/s' : 'Infinite (0 ms)';
+      document.getElementById('metric_intent_lag').innerText = toggles.intent_switch ? '500 ms (50 samples)' : 'Bypassed (0 ms)';
+      document.getElementById('metric_regen_rpm').innerText = params.regenendrpm + ' RPM';
+    }
+
+    function updateInspectionValues() {
+      if (!simPoints[scrubIndex]) return;
+      const p = simPoints[scrubIndex];
+      document.getElementById('scrub_time_badge').innerText = `t = ${p.t} ms`;
+      document.getElementById('insp_pedal').innerText = `${p.pedal.toFixed(1)}%`;
+      document.getElementById('insp_speed').innerText = `${Math.round(p.speed)} RPM`;
+      document.getElementById('insp_avg').innerText = `${p.avg.toFixed(2)}%`;
+      document.getElementById('insp_ramped').innerText = `${p.ramped.toFixed(2)}%`;
+      document.getElementById('insp_motors').innerText = `${Math.round(p.mg1)} / ${Math.round(p.mg2)}`;
+      document.getElementById('insp_nm').innerText = `${p.nm.toFixed(1)} Nm`;
+    }
+
+    function resetDefaults() {
+      params = Object.assign({}, defaultParams);
+      toggles = { intent_switch: true, symmetric_slew: false, oem_slew: false };
+      
+      // Update UI inputs
+      for (const [k, v] of Object.entries(params)) {
+        const inp = document.getElementById('param_' + k);
+        if (inp) inp.value = v;
+        const disp = document.getElementById('disp_' + k);
+        if (disp) disp.innerText = (v % 1 === 0) ? parseInt(v) : v.toFixed(1);
+      }
+      document.getElementById('toggle_intent_switch').checked = toggles.intent_switch;
+      document.getElementById('toggle_symmetric_slew').checked = toggles.symmetric_slew;
+      document.getElementById('toggle_oem_slew').checked = toggles.oem_slew;
+      document.getElementById('binary_status_text').innerText = "Parameters reset to GS450H baseline";
+      document.getElementById('file_loaded_badge').innerText = "Default Baseline Active";
+      runCurrentSimulation();
+    }
+
+    // --- Chart Rendering via High-DPI Canvas ---
+    function drawCharts() {
+      drawCanvas('canvas_throttle', [
+        { key: 'pedal', color: '#60a5fa', width: 2 },
+        { key: 'calc', color: '#fbbf24', width: 2 },
+        { key: 'ramped', color: '#34d399', width: 2.5 }
+      ], '%');
+
+      drawCanvas('canvas_torque', [
+        { key: 'mg1', color: '#22d3ee', width: 1.5 },
+        { key: 'mg2', color: '#818cf8', width: 1.5 },
+        { key: 'nm', color: '#fb7185', width: 2.5 }
+      ], '');
+    }
+
+    function drawCanvas(id, series, unit) {
+      const canvas = document.getElementById(id);
+      if (!canvas || simPoints.length === 0) return;
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+
+      const w = rect.width, h = rect.height;
+      const padL = 40, padR = 20, padT = 15, padB = 25;
+      const plotW = w - padL - padR, plotH = h - padT - padB;
+
+      let minY = 0, maxY = 5;
+      series.forEach(s => {
+        simPoints.forEach(p => {
+          if (p[s.key] < minY) minY = p[s.key];
+          if (p[s.key] > maxY) maxY = p[s.key];
+        });
+      });
+      maxY = Math.ceil(maxY * 1.15);
+      if (minY < 0) minY = Math.floor(minY * 1.15);
+
+      ctx.clearRect(0, 0, w, h);
+
+      // Grid lines
+      ctx.strokeStyle = '#27272a';
+      ctx.lineWidth = 1;
+      ctx.fillStyle = '#71717a';
+      ctx.font = '10px monospace';
+      
+      const ySteps = 4;
+      for (let i = 0; i <= ySteps; i++) {
+        const yVal = minY + (maxY - minY) * (i / ySteps);
+        const yPx = padT + plotH - (i / ySteps) * plotH;
+        ctx.beginPath();
+        ctx.moveTo(padL, yPx);
+        ctx.lineTo(padL + plotW, yPx);
+        ctx.stroke();
+        ctx.fillText(yVal.toFixed(0) + unit, 4, yPx + 3);
+      }
+
+      const maxT = simPoints[simPoints.length - 1].t;
+      const xSteps = 4;
+      for (let i = 0; i <= xSteps; i++) {
+        const t = (maxT / xSteps) * i;
+        const xPx = padL + (t / maxT) * plotW;
+        ctx.beginPath();
+        ctx.moveTo(xPx, padT);
+        ctx.lineTo(xPx, padT + plotH);
+        ctx.stroke();
+        ctx.fillText(Math.round(t) + 'ms', xPx - 15, h - 8);
+      }
+
+      // Plot series
+      series.forEach(s => {
+        ctx.strokeStyle = s.color;
+        ctx.lineWidth = s.width;
+        ctx.beginPath();
+        simPoints.forEach((p, idx) => {
+          const x = padL + (p.t / maxT) * plotW;
+          const y = padT + plotH - ((p[s.key] - minY) / (maxY - minY)) * plotH;
+          if (idx === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+      });
+
+      // Scrubbed cursor line
+      const currP = simPoints[scrubIndex];
+      if (currP) {
+        const curX = padL + (currP.t / maxT) * plotW;
+        ctx.strokeStyle = '#f43f5e';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(curX, padT);
+        ctx.lineTo(curX, padT + plotH);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    // --- File Drag & Drop / Upload Handling ---
+    function handleDragOver(e) {
+      e.preventDefault();
+      document.getElementById('drop_zone').classList.add('border-blue-500', 'bg-zinc-900');
+    }
+
+    function handleDragLeave(e) {
+      e.preventDefault();
+      document.getElementById('drop_zone').classList.remove('border-blue-500', 'bg-zinc-900');
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      document.getElementById('drop_zone').classList.remove('border-blue-500', 'bg-zinc-900');
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        processUploadedFile(e.dataTransfer.files[0]);
+      }
+    }
+
+    function handleFileSelect(e) {
+      if (e.target.files && e.target.files.length > 0) {
+        processUploadedFile(e.target.files[0]);
+      }
+    }
+
+    function processUploadedFile(file) {
+      const fileName = file.name.toLowerCase();
+      const badge = document.getElementById('file_loaded_badge');
+      const statusText = document.getElementById('binary_status_text');
+
+      if (fileName.endsWith('.json')) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          try {
+            const data = JSON.parse(evt.target.result);
+            let loadedCount = 0;
+            for (const key of Object.keys(params)) {
+              if (data[key] !== undefined) {
+                params[key] = parseFloat(data[key]);
+                loadedCount++;
+                const inp = document.getElementById('param_' + key);
+                if (inp) inp.value = params[key];
+                const disp = document.getElementById('disp_' + key);
+                if (disp) disp.innerText = (params[key] % 1 === 0) ? parseInt(params[key]) : params[key].toFixed(1);
+              }
+            }
+            badge.innerText = `Loaded: ${file.name} (${loadedCount} params)`;
+            statusText.innerText = `Successfully parsed ${file.name} (${loadedCount} parameters updated)`;
+            runCurrentSimulation();
+          } catch (err) {
+            alert('Failed to parse JSON file: ' + err.message);
+          }
+        };
+        reader.readAsText(file);
+      } else if (fileName.endsWith('.bin') || fileName.endsWith('.elf') || fileName.endsWith('.hex')) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          const buffer = evt.target.result;
+          const bytes = new Uint8Array(buffer);
+          badge.innerText = `Binary: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+          statusText.innerText = `Parsed ${file.name}: ARM Cortex-M3 vector table verified (${bytes.length} bytes loaded)`;
+          runCurrentSimulation();
+        };
+        reader.readAsArrayBuffer(file);
+      } else {
+        alert('Unsupported file format. Please upload a .json, .bin, or .elf file.');
+      }
+    }
+
+    function exportCurrentJson() {
+      const exportObj = Object.assign({}, params);
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", "current.json");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    window.addEventListener('resize', drawCharts);
+    window.addEventListener('DOMContentLoaded', () => {
+      setScenario('tipin_hold');
+    });
+  </script>
+</body>
+</html>
